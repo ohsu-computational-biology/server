@@ -529,15 +529,15 @@ def addGenotypePhenotypeSearchOptions(parser):
     """
     parser.add_argument(
         "--feature", "-f", default=None,
-        help="Only return assocaitions to this feature."
+        help="Only return associations to this feature."
     )
     parser.add_argument(
         "--evidence", "-E", default=None,
-        help="Only return assocaitions with this type of evidence."
+        help="Only return associations to this evidence."
     )
     parser.add_argument(
         "--phenotype", "-p", default=None,
-        help="Only return assocaitions to this phenotype."
+        help="Only return associations to this phenotype."
     )
 
 
