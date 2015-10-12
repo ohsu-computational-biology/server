@@ -396,7 +396,7 @@ class SearchReadsRunner(AbstractSearchRunner):
 
     def _textOutput(self, gaObjects):
         """
-        Prints out the specified Variant objects in a VCF-like form.
+        Prints out the specified Read objects.
         """
         for read in gaObjects:
             # TODO add in some more useful output here.
@@ -427,6 +427,14 @@ class SearchGenotypePhenotypeRunner(AbstractSearchRunner):
             feature=self._feature, phenotype=self._phenotype,
             evidence=self._evidence)
         self._output(iterator)
+
+    def _textOutput(self, gaObjects):
+        """
+        Prints out the specified FeaturePhenotypeAssociation objects.
+        """
+        for association in gaObjects:
+            # TODO add in some more useful output here.
+            print(association.id)
 
 # ListReferenceBases is an oddball, and doesn't fit either get or
 # search patterns.
@@ -540,15 +548,15 @@ def addGenotypePhenotypeSearchOptions(parser):
     """
     parser.add_argument(
         "--feature", "-f", default=None,
-        help="Only return assocaitions to this feature."
+        help="Only return associations to this feature."
     )
     parser.add_argument(
         "--evidence", "-E", default=None,
-        help="Only return assocaitions with this type of evidence."
+        help="Only return associations to this evidence."
     )
     parser.add_argument(
         "--phenotype", "-p", default=None,
-        help="Only return assocaitions to this phenotype."
+        help="Only return associations to this phenotype."
     )
 
 

@@ -3,12 +3,10 @@ Module responsible for translating g2p data into GA4GH native
 objects.
 """
 
-# no futures
-# std lib
 import rdflib
 import urlparse
-import time
-# locals
+# import time
+
 import ga4gh.protocol as protocol
 import ga4gh.exceptions as exceptions
 
@@ -100,7 +98,7 @@ class G2PDataset:
         for row in results:
             annotations.append(
                 self.toGA4GH(
-                              self.query("<%s>" %  row['s'].toPython())))
+                              self.query("<%s>" % row['s'].toPython())))
 
         return annotations
 
@@ -179,9 +177,9 @@ class G2PDataset:
 
         annotationQuery = annotationQuery.replace("%SUBJECT%", subject)
         results = self._rdfGraph.query(annotationQuery)
-        now = time.time()
+        # now = time.time()
         rows = [row.asdict() for row in results]
-        #print('annotationQuery',time.time()-now)
+        # print('annotationQuery',time.time()-now)
 
         for row in rows:
             for k in row:
@@ -204,16 +202,16 @@ class G2PDataset:
             if row['p'] == 'http://purl.org/oban/association_has_subject':
                 location = "<" + row['o'] + ">"
                 locationQuery = locationQuery.replace(
-                    "%SUBJECT%",location)
+                    "%SUBJECT%", location)
                 # print(locationQuery)
-                now = time.time()
+                # now = time.time()
                 results = self._rdfGraph.query(locationQuery)
                 locationRows = [row.asdict() for row in results]
                 for row in locationRows:
                     for k in row:
                         row[k] = row[k].toPython()
                     row['s'] = location
-                #print('locationQuery',time.time()-now)
+                # print('locationQuery',time.time()-now)
 
         annotation = self.flatten(rows)
         location = self.flatten(locationRows)
