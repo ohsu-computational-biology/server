@@ -27,7 +27,7 @@ packages using:
 
 .. code-block:: bash
 
-    $ sudo apt-get install python-dev python-virtualenv zlib1g-dev libxslt1-dev
+    $ sudo apt-get install python-dev python-virtualenv zlib1g-dev libxslt1-dev libffi-dev
 
 On Fedora 22+ (current), the equivalent would be:
 
@@ -59,8 +59,8 @@ Now we can download some example data, which we'll use for our demo:
 
 .. code-block:: bash
 
-    (ga4gh-env) $ wget http://www.well.ox.ac.uk/~jk/ga4gh-example-data-v2.1.tar
-    (ga4gh-env) $ tar -xvf ga4gh-example-data-v2.1.tar
+    (ga4gh-env) $ wget http://www.well.ox.ac.uk/~jk/ga4gh-example-data-v3.0.tar
+    (ga4gh-env) $ tar -xvf ga4gh-example-data-v3.0.tar
 
 After extracting the data, we can then run the ``ga4gh_server`` application:
 
