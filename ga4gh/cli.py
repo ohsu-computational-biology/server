@@ -423,7 +423,7 @@ class SearchGenotypePhenotypeRunner(AbstractSearchRunner):
         self._evidence = argStore["evidence"]
 
     def run(self):
-        iterator = self._httpClient.searchGenotypePhenotype(
+        iterator = self._client.searchGenotypePhenotype(
             feature=self._feature, phenotype=self._phenotype,
             evidence=self._evidence)
         self._output(iterator)
