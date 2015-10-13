@@ -27153,8 +27153,7 @@ OBO:DOID_3969 a owl:Class ;
 <http://cancer.sanger.ac.uk/cosmic/mutation/overview?id=476> a OBO:SO_0001059,
         OBO:SO_0001583,
         owl:NamedIndividual ;
-    rdfs:label "BRAF  V600E missense mutation",
-        "BRAF V600E missense mutation",
+    rdfs:label "BRAF V600E missense mutation",
         "BRAF V600E mutation",
         "COSM476" ;
     faldo:location <http://www.monarchinitiative.org/_CGD:085ac6e4CCDS:5863.1Region>,
