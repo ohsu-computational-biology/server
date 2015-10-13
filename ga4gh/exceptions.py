@@ -201,11 +201,6 @@ class DatasetNotFoundException(NotFoundException):
             datasetId)
 
 
-class ReadGroupSetNotFoundException(ObjectNotFoundException):
-    def __init__(self, readGroupSetId):
-        self.message = "readGroupSetId '{}' not found".format(readGroupSetId)
-
-
 class ReadGroupNotFoundException(ObjectNotFoundException):
     def __init__(self, readGroupId):
         self.message = "readGroupId '{}' not found".format(readGroupId)
@@ -250,10 +245,6 @@ class ReferenceRangeErrorException(RangeErrorException):
         self.message = (
             "Query ({}, {}) outside of range for reference {}".format(
                 start, end, referenceId))
-
-
-class VersionNotSupportedException(NotFoundException):
-    message = "API version not supported"
 
 
 class MethodNotAllowedException(RuntimeException):
@@ -485,6 +476,18 @@ class MultipleReferenceSetsInReadGroupSet(MalformedException):
             "The BAM file '{}' contains the referenceSets '{}' and "
             "'{}'; at most one referenceSet per file is allowed.".format(
                 fileName, referenceSetName, otherReferenceSetName))
+
+
+class MissingDatasetMetadataException(MalformedException):
+    """
+    A directory containing datasets is missing some metadata
+    in the corresponding JSON file
+    """
+    def __init__(self, fileName, key):
+        self.message = (
+            "JSON dataset metadata for file {} "
+            "is missing key {}".format(
+                fileName, key))
 
 
 ###############################################################

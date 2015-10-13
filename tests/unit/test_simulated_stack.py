@@ -140,7 +140,7 @@ class TestSimulatedStack(unittest.TestCase):
     def verifyDatasetsEqual(self, gaDataset, dataset):
         self.assertEqual(gaDataset.id, dataset.getId())
         self.assertEqual(gaDataset.name, dataset.getLocalId())
-        # TODO fill out the remaining fields and test
+        self.assertEqual(gaDataset.description, dataset.getDescription())
 
     def verifyReferenceSetsEqual(self, gaReferenceSet, referenceSet):
         self.assertEqual(gaReferenceSet.id, referenceSet.getId())
@@ -157,6 +157,8 @@ class TestSimulatedStack(unittest.TestCase):
             referenceSet.getSourceAccessions())
         self.assertEqual(
             gaReferenceSet.isDerived, referenceSet.getIsDerived())
+        self.assertEqual(
+            gaReferenceSet.name, referenceSet.getLocalId())
 
     def verifyReferencesEqual(self, gaReference, reference):
         self.assertEqual(gaReference.id, reference.getId())
