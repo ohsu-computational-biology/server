@@ -5,7 +5,8 @@ objects.
 
 import rdflib
 import urlparse
-# import time
+import time
+import sets
 
 import ga4gh.protocol as protocol
 import ga4gh.exceptions as exceptions
@@ -34,8 +35,8 @@ class G2PDataset:
             SELECT %PROPERTIES%
                 WHERE {
                     ?s    a OBAN:association .
-                    ?s  OBAN:association_has_subject ?l .
-                    ?l rdfs:label ?location_label  .
+                    ?s  OBAN:association_has_subject ?location .
+                    ?location rdfs:label ?location_label  .
                     %LOCATION%
                     ?s  OBO:RO_has_environment  ?drug .
                     ?drug  rdfs:label ?drug_label  .
@@ -61,13 +62,20 @@ class G2PDataset:
 
         # TODO is this necessary?
         self.associationsLength = 0
+        # log queries that take more than N seconds
+        self.RESPONSETIME_LOGGING_THRESHOLD = 2
 
     def _search(self, request):
         offset = request.offset
 
+        now = time.time()
         associations = self.queryLabels(
             request.feature, request.evidence, request.phenotype,
             request.pageSize, offset)
+        responseTime = time.time()-now
+        if responseTime > self.RESPONSETIME_LOGGING_THRESHOLD:
+            print('_search', responseTime)
+            print(request)
 
         self.associationsLength = len(associations)
         for association in associations:
@@ -80,7 +88,7 @@ class G2PDataset:
         """
         This query is the main search mechanism.
         It queries the graph for annotations that match the
-        AND of [location,drug,disease]
+        AND of [location,drug,disease].
         """
         query = self.formatQuery(location, drug, disease)
 
@@ -90,15 +98,27 @@ class G2PDataset:
 
         query += ("LIMIT {} OFFSET {} ".format(pageSize, offset))
 
-        # print(query)
-
+        now = time.time()
         results = self._rdfGraph.query(query)
 
-        annotations = []
+        # Depending on the cardinality this query can return multiple rows
+        # per annotations.  Here we reduce it to a list of unique annotations
+        # URIs
+        uniqueAnnotations = sets.Set()
         for row in results:
+            uniqueAnnotations.add("<{}>".format(row['s'].toPython()))
+
+        # now fetch the details on the annotation
+        annotations = []
+        for annotation in uniqueAnnotations:
             annotations.append(
                 self.toGA4GH(
-                              self.query("<%s>" % row['s'].toPython())))
+                              self.query(annotation)))
+        responseTime = time.time()-now
+        if responseTime > self.RESPONSETIME_LOGGING_THRESHOLD:
+            print('queryLabels', responseTime)
+            print('len(annotations)', len(annotations))
+            print(query)
 
         return annotations
 
@@ -176,17 +196,20 @@ class G2PDataset:
         """
 
         annotationQuery = annotationQuery.replace("%SUBJECT%", subject)
+        now = time.time()
         results = self._rdfGraph.query(annotationQuery)
-        # now = time.time()
         rows = [row.asdict() for row in results]
-        # print('annotationQuery',time.time()-now)
+        responseTime = time.time()-now
+        if responseTime > self.RESPONSETIME_LOGGING_THRESHOLD:
+            print('annotationQuery', responseTime)
+            print(annotationQuery)
 
         for row in rows:
             for k in row:
                 row[k] = row[k].toPython()
             row['s'] = subject
 
-        locationQuery = """
+        locationQueryTemplate = """
         PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
              PREFIX OBO: <http://purl.obolibrary.org/obo/>
         SELECT distinct *
@@ -198,20 +221,23 @@ class G2PDataset:
         """
 
         locationRows = []
+        uniqueLocations = sets.Set()
         for row in rows:
             if row['p'] == 'http://purl.org/oban/association_has_subject':
-                location = "<" + row['o'] + ">"
-                locationQuery = locationQuery.replace(
-                    "%SUBJECT%", location)
-                # print(locationQuery)
-                # now = time.time()
-                results = self._rdfGraph.query(locationQuery)
-                locationRows = [row.asdict() for row in results]
-                for row in locationRows:
-                    for k in row:
-                        row[k] = row[k].toPython()
-                    row['s'] = location
-                # print('locationQuery',time.time()-now)
+                uniqueLocations.add("<" + row['o'] + ">")
+
+        for location in uniqueLocations:
+            locationQuery = locationQueryTemplate.replace(
+                "%SUBJECT%", location)
+            results = self._rdfGraph.query(locationQuery)
+            locationRows = [locationRow.asdict() for locationRow in results]
+            for locationRow in locationRows:
+                for k in locationRow:
+                    locationRow[k] = locationRow[k].toPython()
+                locationRow['s'] = location
+            if responseTime > self.RESPONSETIME_LOGGING_THRESHOLD:
+                print('locationQuery', responseTime)
+                print(locationQuery)
 
         annotation = self.flatten(rows)
         location = self.flatten(locationRows)
