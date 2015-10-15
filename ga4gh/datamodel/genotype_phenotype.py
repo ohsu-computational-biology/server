@@ -35,8 +35,8 @@ class G2PDataset:
             SELECT %PROPERTIES%
                 WHERE {
                     ?s    a OBAN:association .
-                    ?s  OBAN:association_has_subject ?location .
-                    ?location rdfs:label ?location_label  .
+                    ?s  OBAN:association_has_subject ?l .
+                    ?l  rdfs:label ?location_label  .
                     %LOCATION%
                     ?s  OBO:RO_has_environment  ?drug .
                     ?drug  rdfs:label ?drug_label  .

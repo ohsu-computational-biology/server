@@ -107,6 +107,7 @@ class TestGenotypePhenotypeSearch(unittest.TestCase):
         self.assertEqual(200, response.status_code)
         response = protocol.SearchGenotypePhenotypeResponse().fromJsonString(
             response.data)
+        print(response)
         self.assertEqual(1, len(response.associations[0].features))
 
         request.phenotype = protocol.ExternalIdentifierQuery()
