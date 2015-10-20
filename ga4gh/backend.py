@@ -821,11 +821,10 @@ class SimulatedBackend(AbstractBackend):
             self.addDataset(dataset)
 
         # g2pDatasets
-        self._g2pDataset = genotype_phenotype.G2PDataset(
-            [
-                {'source': 'tests/data/g2pDatasets/cgd/cgd-test.ttl'}
-            ]
-        )
+        self._g2pDataset = genotype_phenotype.\
+            G2PDataset('cgd',
+                       'tests/data/g2pDatasets/cgd/',
+                       'tests/data/g2pDatasets')
 
 
 class FileSystemBackend(AbstractBackend):
@@ -848,7 +847,6 @@ class FileSystemBackend(AbstractBackend):
             for setName in os.listdir(sourceDir):
                 relativePath = os.path.join(sourceDir, setName)
                 if os.path.isdir(relativePath):
-                    print(setName, relativePath)
                     objectAdder(constructor(setName, relativePath, self))
 
 
