@@ -7,6 +7,7 @@ import rdflib
 import urlparse
 import time
 import sets
+import os
 
 import ga4gh.protocol as protocol
 import ga4gh.exceptions as exceptions
@@ -20,12 +21,13 @@ class G2PDataset:
     published by the Monarch project was the source of Evidence.
     """
 
-    def __init__(self, sources):
+    def __init__(self, setName, relativePath, dataDir):
         """
         Initialize dataset, using the passed dict of sources
         [{source,format}] see rdflib.parse() for more
         """
-
+        self._sources = [os.path.join(relativePath, f)
+                         for f in os.listdir(relativePath)]
         self._searchQuery = """
             PREFIX OBAN: <http://purl.org/oban/>
             PREFIX OBO: <http://purl.obolibrary.org/obo/>
@@ -53,12 +55,13 @@ class G2PDataset:
         self._rdfGraph = rdflib.ConjunctiveGraph()
 
         # load with data
-        for source in sources:
-            if not source['format']:
-                self._rdfGraph.parse(source['source'])
+        for source in self._sources:
+            if source.endswith('.ttl'):
+                self._rdfGraph.parse(source,
+                                     format='n3')
             else:
-                self._rdfGraph.parse(source['source'],
-                                     format=source['format'])
+                self._rdfGraph.parse(source,
+                                     format='xml')
 
         # TODO is this necessary?
         self.associationsLength = 0

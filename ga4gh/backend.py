@@ -208,6 +208,7 @@ class AbstractBackend(object):
         self._referenceSetIdMap = {}
         self._referenceSetNameMap = {}
         self._referenceSetIds = []
+        self._g2pDataset = None
 
     def addDataset(self, dataset):
         """
@@ -225,6 +226,12 @@ class AbstractBackend(object):
         self._referenceSetIdMap[id_] = referenceSet
         self._referenceSetNameMap[referenceSet.getLocalId()] = referenceSet
         self._referenceSetIds.append(id_)
+
+    def addg2pDataset(self, g2pDataset):
+        """
+        Adds the specified g2p association set to this backend.
+        """
+        self._g2pDataset = g2pDataset
 
     def setRequestValidation(self, requestValidation):
         """
@@ -812,10 +819,13 @@ class SimulatedBackend(AbstractBackend):
                 numReadGroupsPerReadGroupSet=numReadGroupsPerReadGroupSet,
                 numAlignments=numAlignments)
             self.addDataset(dataset)
+
+        # g2pDatasets
         self._g2pDataset = genotype_phenotype.G2PDataset(
             [
-                {'source': 'tests/data/cgd-test.ttl', 'format': "n3"}
-            ])
+                {'source': 'tests/data/g2pDatasets/cgd/cgd-test.ttl'}
+            ]
+        )
 
 
 class FileSystemBackend(AbstractBackend):
@@ -825,26 +835,21 @@ class FileSystemBackend(AbstractBackend):
     def __init__(self, dataDir):
         super(FileSystemBackend, self).__init__()
         self._dataDir = dataDir
-        sourceDirNames = ["referenceSets", "datasets"]
+        sourceDirNames = ["referenceSets", "datasets",
+                          "g2pDatasets"]
         constructors = [
-            references.HtslibReferenceSet, datasets.FileSystemDataset]
-        objectAdders = [self.addReferenceSet, self.addDataset]
+            references.HtslibReferenceSet, datasets.FileSystemDataset,
+            genotype_phenotype.G2PDataset]
+        objectAdders = [self.addReferenceSet, self.addDataset,
+                        self.addg2pDataset]
         for sourceDirName, constructor, objectAdder in zip(
                 sourceDirNames, constructors, objectAdders):
             sourceDir = os.path.join(self._dataDir, sourceDirName)
             for setName in os.listdir(sourceDir):
                 relativePath = os.path.join(sourceDir, setName)
                 if os.path.isdir(relativePath):
+                    print(setName, relativePath)
                     objectAdder(constructor(setName, relativePath, self))
-
-        self._g2pDataset = genotype_phenotype.G2PDataset(
-            [
-                {'source': 'tests/data/cgd.ttl', 'format': "n3"},
-                {'source':
-                    'https://raw.githubusercontent.com/oborel/obo-relations'
-                    '/master/ro.owl',
-                    'format': "xml"}
-            ])
 
 
 class GenotypePhenotypeIterator(IntervalIterator):
