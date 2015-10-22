@@ -227,7 +227,7 @@ class AbstractBackend(object):
         self._referenceSetNameMap[referenceSet.getLocalId()] = referenceSet
         self._referenceSetIds.append(id_)
 
-    def addg2pDataset(self, g2pDataset):
+    def addG2PDataset(self, g2pDataset):
         """
         Adds the specified g2p association set to this backend.
         """
@@ -840,7 +840,7 @@ class FileSystemBackend(AbstractBackend):
             references.HtslibReferenceSet, datasets.FileSystemDataset,
             genotype_phenotype.G2PDataset]
         objectAdders = [self.addReferenceSet, self.addDataset,
-                        self.addg2pDataset]
+                        self.addG2PDataset]
         for sourceDirName, constructor, objectAdder in zip(
                 sourceDirNames, constructors, objectAdders):
             sourceDir = os.path.join(self._dataDir, sourceDirName)
