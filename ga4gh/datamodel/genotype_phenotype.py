@@ -5,7 +5,6 @@ objects.
 
 import rdflib
 import urlparse
-import time
 import sets
 import os
 
@@ -63,22 +62,21 @@ class G2PDataset:
                 self._rdfGraph.parse(source,
                                      format='xml')
 
-        # TODO is this necessary?
-        self.associationsLength = 0
         # log queries that take more than N seconds
-        self.RESPONSETIME_LOGGING_THRESHOLD = 2
+        # import time
+        # self.RESPONSETIME_LOGGING_THRESHOLD = 2
 
     def _search(self, request):
         offset = request.offset
 
-        now = time.time()
+        # now = time.time()
         associations = self.queryLabels(
             request.feature, request.evidence, request.phenotype,
             request.pageSize, offset)
-        responseTime = time.time()-now
-        if responseTime > self.RESPONSETIME_LOGGING_THRESHOLD:
-            print('_search', responseTime)
-            print(request)
+        # responseTime = time.time()-now
+        # if responseTime > self.RESPONSETIME_LOGGING_THRESHOLD:
+        #     print('_search', responseTime)
+        #     print(request)
 
         self.associationsLength = len(associations)
         for association in associations:
@@ -101,7 +99,7 @@ class G2PDataset:
 
         query += ("LIMIT {} OFFSET {} ".format(pageSize, offset))
 
-        now = time.time()
+        # now = time.time()
         results = self._rdfGraph.query(query)
 
         # Depending on the cardinality this query can return multiple rows
@@ -117,11 +115,11 @@ class G2PDataset:
             annotations.append(
                 self.toGA4GH(
                               self.query(annotation)))
-        responseTime = time.time()-now
-        if responseTime > self.RESPONSETIME_LOGGING_THRESHOLD:
-            print('queryLabels', responseTime)
-            print('len(annotations)', len(annotations))
-            print(query)
+        # responseTime = time.time()-now
+        # if responseTime > self.RESPONSETIME_LOGGING_THRESHOLD:
+        #     print('queryLabels', responseTime)
+        #     print('len(annotations)', len(annotations))
+        #     print(query)
 
         return annotations
 
@@ -199,13 +197,13 @@ class G2PDataset:
         """
 
         annotationQuery = annotationQuery.replace("%SUBJECT%", subject)
-        now = time.time()
+        # now = time.time()
         results = self._rdfGraph.query(annotationQuery)
         rows = [row.asdict() for row in results]
-        responseTime = time.time()-now
-        if responseTime > self.RESPONSETIME_LOGGING_THRESHOLD:
-            print('annotationQuery', responseTime)
-            print(annotationQuery)
+        # responseTime = time.time()-now
+        # if responseTime > self.RESPONSETIME_LOGGING_THRESHOLD:
+        #     print('annotationQuery', responseTime)
+        #     print(annotationQuery)
 
         for row in rows:
             for k in row:
@@ -238,9 +236,9 @@ class G2PDataset:
                 for k in locationRow:
                     locationRow[k] = locationRow[k].toPython()
                 locationRow['s'] = location
-            if responseTime > self.RESPONSETIME_LOGGING_THRESHOLD:
-                print('locationQuery', responseTime)
-                print(locationQuery)
+            # if responseTime > self.RESPONSETIME_LOGGING_THRESHOLD:
+            #     print('locationQuery', responseTime)
+            #     print(locationQuery)
 
         annotation = self.flatten(rows)
         location = self.flatten(locationRows)
