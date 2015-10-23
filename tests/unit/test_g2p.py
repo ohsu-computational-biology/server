@@ -58,7 +58,7 @@ class TestGenotypePhenotypeSearch(unittest.TestCase):
         """
         request = protocol.SearchGenotypePhenotypeRequest()
         response = self.sendPostRequest('/genotypephenotype/search', request)
-        self.assertEqual(501, response.status_code)
+        self.assertEqual(400, response.status_code)
 
     def testGenotypePhenotypeSearchFeature(self):
         """

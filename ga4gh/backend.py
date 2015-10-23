@@ -529,15 +529,6 @@ class AbstractBackend(object):
                 return self._noObjectGenerator()
             return self._singleObjectGenerator(callSet)
 
-    def genotypePhenotypeGenerator(self, request):
-        """
-        Returns a generator over the (genotypePhenotype, nextPageToken)
-        pairs defined by the specified request.
-        """
-        intervalIterator = GenotypePhenotypeIterator(
-            request, self._g2pDataset)
-        return intervalIterator
-
     ###########################################################
     #
     # Public API methods. Each of these methods implements the
@@ -769,15 +760,68 @@ class AbstractBackend(object):
             protocol.SearchDatasetsResponse,
             self.datasetsGenerator)
 
-    def runSearchGenotypePhenotype(self, request):
+    def runSearchGenotypePhenotype(self, requestStr):
         """
         Runs the specified SearchGenotypePhenotypeRequest.
+        We do not attempt to re-use runSearchRequest as
+        All you really need is to get the offset from the pageToken, and then
+        pass this on to the query method in the data model object.
         """
         # TODO verify evidence maps to drug
-        return self.runSearchRequest(
-            request, protocol.SearchGenotypePhenotypeRequest,
-            protocol.SearchGenotypePhenotypeResponse,
-            self.genotypePhenotypeGenerator)
+
+        # validate request
+        self.startProfile()
+        try:
+            requestDict = json.loads(requestStr)
+        except ValueError:
+            raise exceptions.InvalidJsonException(requestStr)
+        requestClass = protocol.SearchGenotypePhenotypeRequest
+        responseClass = protocol.SearchGenotypePhenotypeResponse
+        self.validateRequest(requestDict, requestClass)
+        request = requestClass.fromJsonDict(requestDict)
+        if request.pageSize is None:
+            request.pageSize = self._defaultPageSize
+        if request.pageSize <= 0:
+            raise exceptions.BadPageSizeException(request.pageSize)
+        responseBuilder = protocol.SearchResponseBuilder(
+            responseClass, request.pageSize, self._maxResponseLength)
+        # ensure request has data we can query
+        if (request.evidence is None and
+                request.phenotype is None and
+                request.feature is None):
+            msg = "Error:One of evidence,phenotype or feature must be non-null"
+            raise exceptions.BadRequestException(msg)
+        # determine offset for paging
+        if request.pageToken is not None:
+            request.offset = int(request.pageToken.split(':')[1])
+        else:
+            request.offset = 0
+
+        offset = request.offset
+        count = 0
+        iterator = self._g2pDataset._search(request)
+        for obj in iterator:
+            responseBuilder.addValue(obj)
+            offset += 1
+            count += 1
+            if responseBuilder.isFull():
+                break
+
+        nextPageToken = None
+        if request.pageSize == count:
+            nextPageToken = "{}:{}".format(0, offset)
+
+        responseBuilder.setNextPageToken(nextPageToken)
+        responseString = responseBuilder.getJsonString()
+        self.validateResponse(responseString, responseClass)
+        self.endProfile()
+        return responseString
+
+        # # old ......
+        # return self.runSearchRequest(
+        #     request, protocol.SearchGenotypePhenotypeRequest,
+        #     protocol.SearchGenotypePhenotypeResponse,
+        #     self.genotypePhenotypeGenerator)
 
 
 class EmptyBackend(AbstractBackend):
@@ -848,83 +892,3 @@ class FileSystemBackend(AbstractBackend):
                 relativePath = os.path.join(sourceDir, setName)
                 if os.path.isdir(relativePath):
                     objectAdder(constructor(setName, relativePath, self))
-
-
-class GenotypePhenotypeIterator(IntervalIterator):
-    """
-    An interval iterator for evidence
-    """
-    def __init__(self, request, backend):
-        self.backend = backend
-        if request.pageToken is not None:
-            request.offset = request.pageToken.split(':')[1]
-        else:
-            request.offset = 0
-        super(GenotypePhenotypeIterator, self).__init__(request, None)
-
-    def _getContainer(self):
-        if (self._request.evidence is None and
-                self._request.phenotype is None and
-                self._request.feature is None):
-            msg = "Error:One of evidence,phenotype or feature must be non-null"
-            raise exceptions.BadRequestException(msg)
-        return None   # read from request
-
-    def _initialiseIteration(self):
-        """
-        Starts a new iteration.  Performs the search
-        """
-        self._searchIterator = self.backend._search(self._request)
-        self._currentObject = next(self._searchIterator, None)
-        if self._currentObject is not None:
-            self._nextObject = next(self._searchIterator, None)
-            self._searchAnchor = 0
-            self._distanceFromAnchor = self.backend.associationsLength
-            self._nextPageToken = "{}:{}".format(
-                self._searchAnchor, self._distanceFromAnchor)
-            if (self._distanceFromAnchor < self._request.pageSize):
-                self._nextPageToken = None
-
-    def _search(self, start, end):
-        pass
-
-    @classmethod
-    def _getStart(cls, readAlignment):
-        return readAlignment
-
-    @classmethod
-    def _getEnd(cls, readAlignment):
-        return readAlignment
-
-    def _pickUpIteration(self, searchAnchor, objectsToSkip):
-        """
-        Picks up iteration from a previously provided page token. There are two
-        different phases here:
-        1) We are iterating over the initial set of intervals in which start
-        is < the search start coorindate.
-        2) We are iterating over the remaining intervals in which start >= to
-        the search start coordinate.
-        """
-        self._searchAnchor = searchAnchor
-        self._searchIterator = self.backend._search(
-            self._request)
-        self._distanceFromAnchor = objectsToSkip +\
-            self.backend.associationsLength
-        self._currentObject = next(self._searchIterator, None)
-        if self._currentObject is not None:
-            self._nextObject = next(self._searchIterator, None)
-            self._nextPageToken = "{}:{}".format(
-                self._searchAnchor, self._distanceFromAnchor)
-            if (self._distanceFromAnchor < self._request.pageSize):
-                self._nextPageToken = None
-
-    def next(self):
-        """
-        Returns the next (object, nextPageToken) pair.
-        """
-        if self._currentObject is None:
-            raise StopIteration()
-        ret = self._currentObject, self._nextPageToken
-        self._currentObject = self._nextObject
-        self._nextObject = next(self._searchIterator, None)
-        return ret
