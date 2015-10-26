@@ -442,18 +442,18 @@ class SearchGenotypePhenotypeRunner(AbstractSearchRunner):
     """
     def __init__(self, args):
         super(SearchGenotypePhenotypeRunner, self).__init__(args)
-        argStore = vars(args)
-        for key, value in vars(args).iteritems():
-            if key in ["feature", "phenotype", "evidence"]:
-                if value is not None:
-                    try:
-                        value = json.loads(value)
-                        argStore[key] = value
-                    except ValueError:
-                        argStore[key] = value
-        self._feature = argStore["feature"]
-        self._phenotype = argStore["phenotype"]
-        self._evidence = argStore["evidence"]
+
+        # if arg is JSON; parse; else return as string
+        def checkJson(value):
+            if value is not None:
+                try:
+                    return json.loads(value)
+                except ValueError:
+                    return value
+
+        self._feature = checkJson(args.feature)
+        self._phenotype = checkJson(args.phenotype)
+        self._evidence = checkJson(args.evidence)
 
     def run(self):
         iterator = self._client.searchGenotypePhenotype(

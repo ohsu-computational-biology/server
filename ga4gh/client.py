@@ -486,21 +486,6 @@ class HttpClient(AbstractClient):
         return self._deserializeResponse(
             response.text, protocol.ListReferenceBasesResponse)
 
-    def searchGenotypePhenotype(self, feature=None, phenotype=None,
-                                evidence=None):
-        """
-        Returns an iterator over the GeneotypePhenotype associations from
-        the server
-        """
-        request = protocol.SearchGenotypePhenotypeRequest()
-        request.feature = feature
-        request.phenotype = phenotype
-        request.evidence = evidence
-        request.pageSize = self._pageSize
-        return self._runSearchRequest(
-            request, "genotypephenotype",
-            protocol.SearchGenotypePhenotypeResponse)
-
 
 class LocalClient(AbstractClient):
 
