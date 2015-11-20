@@ -12,7 +12,6 @@ import logging
 import ga4gh.frontend as frontend
 import ga4gh.protocol as protocol
 
-
 class TestGenotypePhenotypeSearch(unittest.TestCase):
     """
     Tests the basic routing and HTTP handling for
@@ -36,7 +35,6 @@ class TestGenotypePhenotypeSearch(unittest.TestCase):
         cls.app = frontend.app.test_client()
         # silence usually unhelpful CORS log
         logging.getLogger('ga4gh.frontend.cors').setLevel(logging.CRITICAL)
-
         # example test values
         cls.backend = frontend.app.backend
 

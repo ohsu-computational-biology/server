@@ -58,31 +58,14 @@ class G2PDataset:
         # load with data
         for source in self._sources:
             if source.endswith('.ttl'):
-                self._rdfGraph.parse(source,
-                                     format='n3')
+                self._rdfGraph.parse(source, format='n3')
             else:
-                self._rdfGraph.parse(source,
-                                     format='xml')
+                self._rdfGraph.parse(source, format='xml')
 
         # log queries that take more than N seconds
         # import time
         # self.RESPONSETIME_LOGGING_THRESHOLD = 2
 
-    # def _search(self, request):
-    #     offset = request.offset
-    #
-    #     # now = time.time()
-    #     associations = self.queryLabels(
-    #         request.feature, request.evidence, request.phenotype,
-    #         request.pageSize, offset)
-    #     # responseTime = time.time()-now
-    #     # if responseTime > self.RESPONSETIME_LOGGING_THRESHOLD:
-    #     #     print('_search', responseTime)
-    #     #     print(request)
-    #
-    #     self.associationsLength = len(associations)
-    #     for association in associations:
-    #         yield association
 
     def queryLabels(
          self, location=None, drug=None, disease=None, pageSize=None,
@@ -93,15 +76,12 @@ class G2PDataset:
         It queries the graph for annotations that match the
         AND of [location,drug,disease].
         """
-        query = self.formatQuery(location, drug, disease)
+        query = self._formatQuery(location, drug, disease)
 
         query = query.replace("%PROPERTIES%",
                               "distinct ?s  ?location ?location_label " +
                               "?disease ?disease_label ?drug  ?drug_label")
 
-        # look for one more to indicate to the upper layer that we have
-        # more data
-        # pageSize += 1
         # query += ("LIMIT {} OFFSET {} ".format(pageSize, offset))
 
         # now = time.time()
@@ -114,31 +94,20 @@ class G2PDataset:
         for row in results:
             uniqueAnnotations.add("<{}>".format(row['s'].toPython()))
 
-        # now fetch the details on the annotation
-        annotations = []
-        for annotation in uniqueAnnotations:
-            annotations.append(
-                self.toGA4GH(
-                              self.query(annotation)))
+        annotations = AnnotationFactory(self._rdfGraph,
+            uniqueAnnotations).annotations()
+
+
         # responseTime = time.time()-now
         # if responseTime > self.RESPONSETIME_LOGGING_THRESHOLD:
         #     print('queryLabels', responseTime)
         #     print('len(annotations)', len(annotations))
         #     print(query)
 
-        # add a callback to return ProtocolElement
-        # since we have already transformed it into ProtocolElement
-        # we just return self
-        def toProtocolElement(self):
-            return self
-
-        for annotation in annotations:
-            annotation.toProtocolElement = \
-                types.MethodType(toProtocolElement, annotation)
 
         return annotations
 
-    def formatQuery(self, location=None, drug=None, disease=None):
+    def _formatQuery(self, location=None, drug=None, disease=None):
         """
         Generate a formatted sparql query with appropriate filters
         """
@@ -187,7 +156,39 @@ class G2PDataset:
         query = query.replace("%LOCATION%", locationClause)
         return query
 
-    def query(self, subject=''):
+
+class AnnotationFactory:
+    """
+    Given a RDF query result set, return corresponding set of ProtocolElements
+    """
+
+    def __init__(self, graph,uniqueAnnotations):
+        self._rdfGraph = graph
+
+        # now fetch the details on the annotation
+        self._annotations = []
+        for annotation in uniqueAnnotations:
+            self._annotations.append(
+                self._toGA4GH(self._query(annotation)))
+
+        # add a callback to return ProtocolElement
+        # since we have already transformed it into ProtocolElement
+        # we just return self
+        def toProtocolElement(self):
+            return self
+
+        for annotation in self._annotations:
+            annotation.toProtocolElement = \
+                types.MethodType(toProtocolElement, annotation)
+
+
+    def annotations(self):
+        """
+        return annotations built in constructor
+        """
+        return self._annotations
+
+    def _query(self, subject=''):
         """
         This is the 'detail' query
 
@@ -255,12 +256,12 @@ class G2PDataset:
             #     print('locationQuery', responseTime)
             #     print(locationQuery)
 
-        annotation = self.flatten(rows)
-        location = self.flatten(locationRows)
+        annotation = self._flatten(rows)
+        location = self._flatten(locationRows)
         annotation['location'] = location
         return annotation
 
-    def flatten(self, dict):
+    def _flatten(self, dict):
         """
         Given a dict of dicts,
         flatten it to a single dict using predicate as keys
@@ -288,7 +289,7 @@ class G2PDataset:
             a['id'] = row['s']
         return a
 
-    def toGA4GH(self, annotation):
+    def _toGA4GH(self, annotation):
         """
         given an annotation dict, return a protocol.FeaturePhenotypeAssociation
         """
