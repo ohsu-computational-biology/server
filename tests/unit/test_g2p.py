@@ -204,5 +204,6 @@ class TestGenotypePhenotypeSearch(unittest.TestCase):
                 fromJsonString(response.data)
             self.assertEqual(1, len(response.associations))
             self.assertNotEqual(previous_id, response.associations[0].id)
-            self.assertIsNotNone(response.nextPageToken)
+            if i != 2:
+                self.assertIsNotNone(response.nextPageToken)
         # from IPython.core.debugger import Pdb ;        Pdb().set_trace()
