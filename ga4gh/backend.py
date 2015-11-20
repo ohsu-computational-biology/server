@@ -381,6 +381,7 @@ class AbstractBackend(object):
         (object, nextPageToken) pairs, which allows this iteration to be picked
         up at any point.
         """
+
         currentIndex = 0
         if request.pageToken is not None:
             currentIndex, = _parsePageToken(request.pageToken, 1)
@@ -770,32 +771,13 @@ class AbstractBackend(object):
             protocol.SearchDatasetsResponse,
             self.datasetsGenerator)
 
-    def runSearchGenotypePhenotype(self, requestStr):
-        """
-        Runs the specified SearchGenotypePhenotypeRequest.
-        We do not attempt to re-use runSearchRequest as
-        All you really need is to get the offset from the pageToken, and then
-        pass this on to the query method in the data model object.
-        """
-        # TODO verify evidence maps to drug
+    def runSearchGenotypePhenotype(self, request):
+        return self.runSearchRequest(
+            request, protocol.SearchGenotypePhenotypeRequest,
+            protocol.SearchGenotypePhenotypeResponse,
+            self.genotypePhenotypeGenerator)
 
-        # validate request
-        self.startProfile()
-        try:
-            requestDict = json.loads(requestStr)
-        except ValueError:
-            raise exceptions.InvalidJsonException(requestStr)
-        requestClass = protocol.SearchGenotypePhenotypeRequest
-        responseClass = protocol.SearchGenotypePhenotypeResponse
-        self.validateRequest(requestDict, requestClass)
-        request = requestClass.fromJsonDict(requestDict)
-        if request.pageSize is None:
-            request.pageSize = self._defaultPageSize
-        if request.pageSize <= 0:
-            raise exceptions.BadPageSizeException(request.pageSize)
-        responseBuilder = protocol.SearchResponseBuilder(
-            responseClass, request.pageSize, self._maxResponseLength)
-        # ensure request has data we can query
+    def genotypePhenotypeGenerator(self, request):
         if (request.evidence is None and
                 request.phenotype is None and
                 request.feature is None):
@@ -803,35 +785,14 @@ class AbstractBackend(object):
             raise exceptions.BadRequestException(msg)
         # determine offset for paging
         if request.pageToken is not None:
-            request.offset = int(request.pageToken.split(':')[1])
+            offset, = _parsePageToken(request.pageToken, 1)
         else:
-            request.offset = 0
+            offset = 0
+        annotationList = self._g2pDataset.queryLabels(
+            request.feature, request.evidence, request.phenotype,
+            request.pageSize, offset)
 
-        offset = request.offset
-        count = 0
-        iterator = self._g2pDataset._search(request)
-        for obj in iterator:
-            responseBuilder.addValue(obj)
-            offset += 1
-            count += 1
-            if responseBuilder.isFull():
-                break
-
-        nextPageToken = None
-        if request.pageSize == count:
-            nextPageToken = "{}:{}".format(0, offset)
-
-        responseBuilder.setNextPageToken(nextPageToken)
-        responseString = responseBuilder.getJsonString()
-        self.validateResponse(responseString, responseClass)
-        self.endProfile()
-        return responseString
-
-        # # old ......
-        # return self.runSearchRequest(
-        #     request, protocol.SearchGenotypePhenotypeRequest,
-        #     protocol.SearchGenotypePhenotypeResponse,
-        #     self.genotypePhenotypeGenerator)
+        return self._objectListGenerator(request, annotationList)
 
 
 class EmptyBackend(AbstractBackend):

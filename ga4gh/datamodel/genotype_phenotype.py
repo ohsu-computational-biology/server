@@ -7,6 +7,7 @@ import rdflib
 import urlparse
 import sets
 import os
+import types
 
 import ga4gh.protocol as protocol
 import ga4gh.exceptions as exceptions
@@ -48,6 +49,7 @@ class G2PDataset:
                     OPTIONAL {  ?evidence  rdfs:label ?evidence_label } .
               %FILTER%
             }
+            ORDER BY ?s
             """
 
         # initialize graph
@@ -66,21 +68,21 @@ class G2PDataset:
         # import time
         # self.RESPONSETIME_LOGGING_THRESHOLD = 2
 
-    def _search(self, request):
-        offset = request.offset
-
-        # now = time.time()
-        associations = self.queryLabels(
-            request.feature, request.evidence, request.phenotype,
-            request.pageSize, offset)
-        # responseTime = time.time()-now
-        # if responseTime > self.RESPONSETIME_LOGGING_THRESHOLD:
-        #     print('_search', responseTime)
-        #     print(request)
-
-        self.associationsLength = len(associations)
-        for association in associations:
-            yield association
+    # def _search(self, request):
+    #     offset = request.offset
+    #
+    #     # now = time.time()
+    #     associations = self.queryLabels(
+    #         request.feature, request.evidence, request.phenotype,
+    #         request.pageSize, offset)
+    #     # responseTime = time.time()-now
+    #     # if responseTime > self.RESPONSETIME_LOGGING_THRESHOLD:
+    #     #     print('_search', responseTime)
+    #     #     print(request)
+    #
+    #     self.associationsLength = len(associations)
+    #     for association in associations:
+    #         yield association
 
     def queryLabels(
          self, location=None, drug=None, disease=None, pageSize=None,
@@ -97,7 +99,10 @@ class G2PDataset:
                               "distinct ?s  ?location ?location_label " +
                               "?disease ?disease_label ?drug  ?drug_label")
 
-        query += ("LIMIT {} OFFSET {} ".format(pageSize, offset))
+        # look for one more to indicate to the upper layer that we have
+        # more data
+        # pageSize += 1
+        # query += ("LIMIT {} OFFSET {} ".format(pageSize, offset))
 
         # now = time.time()
         results = self._rdfGraph.query(query)
@@ -120,6 +125,16 @@ class G2PDataset:
         #     print('queryLabels', responseTime)
         #     print('len(annotations)', len(annotations))
         #     print(query)
+
+        # add a callback to return ProtocolElement
+        # since we have already transformed it into ProtocolElement
+        # we just return self
+        def toProtocolElement(self):
+            return self
+
+        for annotation in annotations:
+            annotation.toProtocolElement = \
+                types.MethodType(toProtocolElement, annotation)
 
         return annotations
 

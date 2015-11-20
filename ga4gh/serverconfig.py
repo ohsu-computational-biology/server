@@ -39,7 +39,7 @@ class DevelopmentConfig(BaseConfig):
     Configuration used for development.
     """
     DATA_SOURCE = "ga4gh-example-data"
-    DEBUG = True
+    DEBUG = False
 
 
 class LocalOidConfig(DevelopmentConfig):
@@ -94,7 +94,7 @@ class FlaskDefaultConfig(object):
     Only used in testing.
     """
     APPLICATION_ROOT = None
-    DEBUG = False
+    DEBUG = True
     JSONIFY_PRETTYPRINT_REGULAR = True
     JSON_AS_ASCII = True
     JSON_SORT_KEYS = True
