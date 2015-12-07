@@ -836,10 +836,7 @@ class SimulatedBackend(AbstractBackend):
             self.addDataset(dataset)
 
         # g2pDatasets
-        self._g2pDataset = genotype_phenotype.\
-            G2PDataset('cgd',
-                       'tests/data/g2pDatasets/cgd/',
-                       'tests/data/g2pDatasets')
+        self._g2pDataset = genotype_phenotype.G2PDataset()
 
 
 class FileSystemBackend(AbstractBackend):

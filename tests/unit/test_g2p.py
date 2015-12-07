@@ -12,9 +12,10 @@ import logging
 import ga4gh.frontend as frontend
 import ga4gh.protocol as protocol
 
+
 class TestGenotypePhenotypeSearch(unittest.TestCase):
     """
-    Tests the basic routing and HTTP handling for
+    Tests both front end and backend
     genotypephenotype/search POST requests.
     """
     exampleUrl = 'www.example.com'
@@ -22,7 +23,7 @@ class TestGenotypePhenotypeSearch(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         config = {
-            "DATA_SOURCE": "__SIMULATED__",
+            "DATA_SOURCE": "simulated://",
             "SIMULATED_BACKEND_RANDOM_SEED": 1111,
             "SIMULATED_BACKEND_NUM_CALLS": 1,
             "SIMULATED_BACKEND_VARIANT_DENSITY": 1.0,
@@ -48,15 +49,6 @@ class TestGenotypePhenotypeSearch(unittest.TestCase):
         }
         return self.app.post(
             path, headers=headers, data=request.toJsonString())
-
-    def testGenotypePhenotypeSearchBadRequest(self):
-        """
-        If nothing is provided to search on,
-        the system should return `bad request`
-        """
-        request = protocol.SearchGenotypePhenotypeRequest()
-        response = self.sendPostRequest('/genotypephenotype/search', request)
-        self.assertEqual(400, response.status_code)
 
     def testGenotypePhenotypeSearchFeature(self):
         """
@@ -85,6 +77,7 @@ class TestGenotypePhenotypeSearch(unittest.TestCase):
         response = protocol.SearchGenotypePhenotypeResponse().fromJsonString(
             response.data)
         self.assertEqual(1, len(response.associations[0].features))
+        print(response.toJsonString())
 
         request.phenotype = "FOOBAR"
         response = self.sendPostRequest('/genotypephenotype/search', request)
@@ -97,21 +90,20 @@ class TestGenotypePhenotypeSearch(unittest.TestCase):
         request = protocol.SearchGenotypePhenotypeRequest()
         request.feature = protocol.ExternalIdentifierQuery()
         id = protocol.ExternalIdentifier()
-        id.database = "http://www.monarchinitiative.org/_"
-        id.identifier = "CGD:d8c2d551UniProtKB:P10721#P10721-1Region"
+        id.database = "http://ohsu.edu/cgd/"
+        id.identifier = "4841bf74"
         id.version = "*"
         request.feature.ids = [id]
         response = self.sendPostRequest('/genotypephenotype/search', request)
         self.assertEqual(200, response.status_code)
         response = protocol.SearchGenotypePhenotypeResponse().fromJsonString(
             response.data)
-        print(response)
         self.assertEqual(1, len(response.associations[0].features))
 
         request.phenotype = protocol.ExternalIdentifierQuery()
         id = protocol.ExternalIdentifier()
-        id.database = "http://purl.obolibrary.org/obo/OMIM_"
-        id.identifier = "606764"
+        id.database = "http://ohsu.edu/cgd/"
+        id.identifier = "37da8697"
         id.version = "*"
         request.phenotype.ids = [id]
         response = self.sendPostRequest('/genotypephenotype/search', request)
@@ -123,7 +115,7 @@ class TestGenotypePhenotypeSearch(unittest.TestCase):
         request.evidence = protocol.ExternalIdentifierQuery()
         id = protocol.ExternalIdentifier()
         id.database = "http://www.drugbank.ca/drugs/"
-        id.identifier = "DB00619"
+        id.identifier = "DB00398"
         id.version = "*"
         request.evidence.ids = [id]
         response = self.sendPostRequest('/genotypephenotype/search', request)

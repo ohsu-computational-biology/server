@@ -94,7 +94,7 @@ class FlaskDefaultConfig(object):
     Only used in testing.
     """
     APPLICATION_ROOT = None
-    DEBUG = True
+    DEBUG = False
     JSONIFY_PRETTYPRINT_REGULAR = True
     JSON_AS_ASCII = True
     JSON_SORT_KEYS = True
