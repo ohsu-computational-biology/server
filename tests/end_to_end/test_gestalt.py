@@ -61,8 +61,9 @@ class TestGestalt(server_test.ServerTest):
             [], clientOutLines,
             "Client stdout log is empty")
 
-        # number of variants to expect
-        expectedNumClientOutLines = 16
+        # number of variants to expect, this changed with the g2p client
+        # client tests
+        expectedNumClientOutLines = 12
         self.assertEqual(len(clientOutLines), expectedNumClientOutLines)
 
         # client stderr should log at least one post
