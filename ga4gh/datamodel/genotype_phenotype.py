@@ -75,8 +75,8 @@ class G2PDataset:
         # self.RESPONSETIME_LOGGING_THRESHOLD = 2
 
     def queryLabels(
-         self, location=None, drug=None, disease=None, pageSize=None,
-         offset=0):
+            self, location=None, drug=None, disease=None, pageSize=None,
+            offset=0):
 
         """
         This query is the main search mechanism.
@@ -85,9 +85,10 @@ class G2PDataset:
         """
         query = self._formatQuery(location, drug, disease)
 
-        query = query.replace("%PROPERTIES%",
-                              "distinct ?s  ?location ?location_label " +
-                              "?disease ?disease_label ?drug  ?drug_label")
+        query = query.replace("%PROPERTIES%", "".join(
+            ["distinct ?s ?location ?location_label ",
+             "?disease ?disease_label ?drug ?drug_label ",
+             "?evidence ?evidence_label"]))
 
         # query += ("LIMIT {} OFFSET {} ".format(pageSize, offset))
 
@@ -467,15 +468,15 @@ class AnnotationFactory:
         PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
         SELECT distinct *
           WHERE {
-          %SUBJECT% ?p ?o .
+          %s ?p ?o .
           OPTIONAL {?o  rdfs:label ?label .}
         }
-        """
+        """ % subject
 
-        annotationQuery = annotationQuery.replace("%SUBJECT%", subject)
         # now = time.time()
         results = self._rdfGraph.query(annotationQuery)
         rows = [row.asdict() for row in results]
+
         # responseTime = time.time()-now
         # if responseTime > self.RESPONSETIME_LOGGING_THRESHOLD:
         #     print('annotationQuery', responseTime)
@@ -559,8 +560,8 @@ class AnnotationFactory:
         # annotation keys
         source = 'http://purl.org/dc/elements/1.1/source'
         location = 'location'
-        evidenceURI = 'http://purl.obolibrary.org/obo/RO_0002558'
         hasObject = 'http://purl.org/oban/association_has_object'
+        has_approval_status = 'http://purl.obolibrary.org/obo/RO_has_approval_status'
         # location keys
         GENO_0000408 = 'http://purl.obolibrary.org/obo/GENO_0000408'
 
@@ -608,24 +609,21 @@ class AnnotationFactory:
         fpa.phenotype = phenotypeInstance
 
         #  ECO or OBI is recommended
-        if source in annotation:
-            if not isinstance(annotation[source], list):
-                annotation[source] = [annotation[source]]
-            for src in annotation[source]:
-                evidence = protocol.Evidence()
-                evidence.evidenceType = protocol.OntologyTerm()
-                id_, ontologySource = self.namespaceSplit(src['val'])
-                evidence.evidenceType.ontologySource = ontologySource
-                evidence.evidenceType.id = id_
+        if has_approval_status in annotation:
+            approval_status = annotation[has_approval_status]
+            evidence = protocol.Evidence()
+            evidence.evidenceType = protocol.OntologyTerm()
+            id_, ontology_source = self.namespaceSplit(approval_status['val'])
+            evidence.evidenceType.ontologySource = ontology_source
+            evidence.evidenceType.id = id_
 
-                evidence.evidenceType.name = ''
-                if 'label' in annotation[evidenceURI]:
-                    evidence.evidenceType.name = \
-                        annotation[evidenceURI]['label']
+            evidence.evidenceType.name = ''
+            if 'label' in approval_status:
+                evidence.evidenceType.name = approval_status['label']
                 fpa.evidence.append(evidence)
                 if not protocol.Evidence.validate(evidence.toJsonDict()):
                     raise exceptions.RequestValidationFailureException(
-                           evidence.toJsonDict(), protocol.Evidence)
+                        evidence.toJsonDict(), protocol.Evidence)
 
         return fpa
 
