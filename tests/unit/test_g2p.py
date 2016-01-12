@@ -12,7 +12,6 @@ import logging
 import ga4gh.frontend as frontend
 import ga4gh.protocol as protocol
 
-
 class TestGenotypePhenotypeSearch(unittest.TestCase):
     """
     Tests both front end and backend
@@ -150,6 +149,7 @@ class TestGenotypePhenotypeSearch(unittest.TestCase):
         self.assertEqual(200, response.status_code)
         response = protocol.SearchGenotypePhenotypeResponse().fromJsonString(
             response.data)
+
         self.assertEqual(1, len(response.associations))
         self.assertEqual(1, len(response.associations[0].features))
         self.assertIsNotNone(response.nextPageToken)
@@ -164,6 +164,7 @@ class TestGenotypePhenotypeSearch(unittest.TestCase):
         self.assertEqual(200, response.status_code)
         response = protocol.SearchGenotypePhenotypeResponse().fromJsonString(
             response.data)
+
         self.assertGreater(len(response.associations), 1)
         self.assertIsNone(response.nextPageToken)
 
@@ -197,3 +198,24 @@ class TestGenotypePhenotypeSearch(unittest.TestCase):
             if i != 2:
                 self.assertIsNotNone(response.nextPageToken)
         # from IPython.core.debugger import Pdb ;        Pdb().set_trace()
+
+    def testGenotypePheontypeSearchEnsureEvidenceLevel(self):
+        """
+        Ensure evidence level is serialized in responses
+        """
+        request = protocol.SearchGenotypePhenotypeRequest()
+        request.feature = "KIT *wild"
+        response = self.sendPostRequest('/genotypephenotype/search', request)
+        self.assertEqual(200, response.status_code)
+        response = protocol.SearchGenotypePhenotypeResponse().fromJsonString(
+            response.data)
+        self.assertTrue(hasattr(response.associations[0],
+                                'evidence'))
+        sample_evidence = response.associations[0].toJsonDict()['evidence'][0]
+        self.assertIn('ontologySource', sample_evidence['evidenceType'])
+        self.assertIn('id', sample_evidence['evidenceType'])
+        self.assertIn('name', sample_evidence['evidenceType'])
+        self.assertEqual(sample_evidence['evidenceType']['id'], 'c703f7ab')
+        self.assertEqual(sample_evidence['evidenceType']['ontologySource'],
+                         'http://ohsu.edu/cgd/')
+        self.assertEqual(sample_evidence['evidenceType']['name'], 'early trials')
