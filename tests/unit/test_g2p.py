@@ -12,6 +12,7 @@ import logging
 import ga4gh.frontend as frontend
 import ga4gh.protocol as protocol
 
+
 class TestGenotypePhenotypeSearch(unittest.TestCase):
     """
     Tests both front end and backend
@@ -212,10 +213,11 @@ class TestGenotypePhenotypeSearch(unittest.TestCase):
         self.assertTrue(hasattr(response.associations[0],
                                 'evidence'))
         sample_evidence = response.associations[0].toJsonDict()['evidence'][0]
-        self.assertIn('ontologySource', sample_evidence['evidenceType'])
-        self.assertIn('id', sample_evidence['evidenceType'])
-        self.assertIn('name', sample_evidence['evidenceType'])
-        self.assertEqual(sample_evidence['evidenceType']['id'], 'c703f7ab')
-        self.assertEqual(sample_evidence['evidenceType']['ontologySource'],
+        sample_evidence_type = sample_evidence['evidenceType']
+        self.assertIn('ontologySource', sample_evidence_type)
+        self.assertEqual(sample_evidence_type['ontologySource'],
                          'http://ohsu.edu/cgd/')
-        self.assertEqual(sample_evidence['evidenceType']['name'], 'early trials')
+        self.assertIn('id', sample_evidence_type)
+        self.assertEqual(sample_evidence_type['id'], 'c703f7ab')
+        self.assertIn('name', sample_evidence_type)
+        self.assertEqual(sample_evidence_type['name'], 'early trials')
