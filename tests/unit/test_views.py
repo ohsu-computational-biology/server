@@ -424,7 +424,6 @@ class TestFrontend(unittest.TestCase):
         response = protocol.SearchGenotypePhenotypeResponse().fromJsonString(
             response.data)
         self.assertEqual(1, len(response.associations[0].features))
-        print(response.toJsonString())
 
         request.phenotype = "FOOBAR"
         response = self.sendPostRequest('/genotypephenotype/search', request)

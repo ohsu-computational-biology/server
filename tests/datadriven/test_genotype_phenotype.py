@@ -15,7 +15,7 @@ import tests.paths as paths
 
 def testG2P():
     testDataDir = os.path.join(
-        paths.testDataDir, "g2pdatasets")
+        paths.testDataDir, "g2pDatasets")
     for test in datadriven.makeTests(testDataDir, G2PDatasetTest):
         yield test
 
@@ -27,7 +27,6 @@ class G2PDatasetTest(datadriven.DataDrivenTest):
         pass
 
     def getDataModelInstance(self, localId, dataPath):
-        print(localId, dataPath)
         return g2p.G2PDataset(setName=localId, relativePath=dataPath)
 
     def getProtocolClass(self):
