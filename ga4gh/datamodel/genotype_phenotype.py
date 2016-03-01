@@ -14,14 +14,55 @@ import types
 
 import ga4gh.protocol as protocol
 import ga4gh.exceptions as exceptions
+import ga4gh.datamodel as datamodel
 
 
-class G2PDataset:
+class AbstractG2PDataset(datamodel.DatamodelObject):
+
+    def __init__(self, setName=None):
+        self._searchQuery = ""
+
+    def toProtocolElement(self):
+        # TODO remove this... added to follow pattern of datadriven tests
+        fpa = protocol.FeaturePhenotypeAssociation()
+        fpa.features = []
+        fpa.id = "TEST"
+        fpa.evidence = []
+        fpa.phenotype = protocol.PhenotypeInstance()
+        fpa.phenotype.type = protocol.OntologyTerm()
+        fpa.phenotype.type.id = "fakeid"
+        fpa.phenotype.type.ontologySource = "fakesource"
+        fpa.environmentalContexts = []
+        return fpa
+
+
+class SimulatedG2PDataset(AbstractG2PDataset):
+    def __init__(self, setName=None, relativePath=None, dataDir=None):
+        pass
+
+    def queryLabels(self, location=None, drug=None,
+                    disease=None, pageSize=None, offset=0):
+        fpa = self.toProtocolElement()
+        fpas = []
+        if location or drug or disease:
+            fpas.append(fpa)
+        # TODO this seems like a hack
+
+        def toProtocolElement(self):
+            return self
+
+        for fpa in fpas:
+            fpa.toProtocolElement = \
+                types.MethodType(toProtocolElement, fpa)
+        return fpas
+
+
+class G2PDataset(AbstractG2PDataset):
     """
     An rdf object store.  The cancer genome database
     [Clinical Genomics Knowledge Base]
-    (http://nif-crawler.neuinfo.org/monarch/ttl/cgd.ttl)
-    published by the Monarch project was the source of Evidence.
+    (http://nif-crawler.neuinfo.org/monarch/ttl/cgd.ttl),
+    published by the Monarch project, was the source of Evidence.
     """
 
     def __init__(self, setName=None, relativePath=None, dataDir=None):
@@ -71,38 +112,6 @@ class G2PDataset:
                     self._rdfGraph.parse(source, format='n3')
                 else:
                     self._rdfGraph.parse(source, format='xml')
-
-    def queryLabels(
-            self, location=None, drug=None, disease=None, pageSize=None,
-            offset=0):
-
-        """
-        This query is the main search mechanism.
-        It queries the graph for annotations that match the
-        AND of [location,drug,disease].
-        """
-        query = self._formatQuery(location, drug, disease)
-        # TODO refactor to testable function
-        query = query.replace("%PROPERTIES%", "".join(
-            ["distinct ?s ?location ?location_label ",
-             "?disease ?disease_label ?drug ?drug_label ",
-             "?evidence ?evidence_label"]))
-
-        # TODO why is this commented out?
-        # query += ("LIMIT {} OFFSET {} ".format(pageSize, offset))
-
-        results = self._rdfGraph.query(query)
-        # Depending on the cardinality this query can return multiple rows
-        # per annotations.  Here we reduce it to a list of unique annotations
-        # URIs
-        uniqueAnnotations = set()
-        for row in results:
-            uniqueAnnotations.add("<{}>".format(row['s'].toPython()))
-
-        annotations = AnnotationFactory(self._rdfGraph,
-                                        uniqueAnnotations).annotations()
-
-        return annotations
 
     def _formatQuery(self, location=None, drug=None, disease=None):
         """
@@ -154,6 +163,38 @@ class G2PDataset:
         query = query.replace("%FILTER%", filter)
         query = query.replace("%LOCATION%", locationClause)
         return query
+
+    def queryLabels(
+            self, location=None, drug=None, disease=None, pageSize=None,
+            offset=0):
+
+        """
+        This query is the main search mechanism.
+        It queries the graph for annotations that match the
+        AND of [location,drug,disease].
+        """
+        query = self._formatQuery(location, drug, disease)
+        # TODO refactor to testable function
+        query = query.replace("%PROPERTIES%", "".join(
+            ["distinct ?s ?location ?location_label ",
+             "?disease ?disease_label ?drug ?drug_label ",
+             "?evidence ?evidence_label"]))
+
+        # TODO why is this commented out?
+        # query += ("LIMIT {} OFFSET {} ".format(pageSize, offset))
+
+        results = self._rdfGraph.query(query)
+        # Depending on the cardinality this query can return multiple rows
+        # per annotations.  Here we reduce it to a list of unique annotations
+        # URIs
+        uniqueAnnotations = set()
+        for row in results:
+            uniqueAnnotations.add("<{}>".format(row['s'].toPython()))
+
+        annotations = AnnotationFactory(self._rdfGraph,
+                                        uniqueAnnotations).annotations()
+
+        return annotations
 
     def toProtocolElement(self):
         # TODO remove this... added to follow pattern of datadriven tests
@@ -326,10 +367,10 @@ class AnnotationFactory:
 
         f = protocol.Feature()
         f.featureType = protocol.OntologyTerm.fromJsonDict({
-            "name": name,
+            "term": name,
             "id": id_,
-            "ontologySource": ontologySource})
-        f.id = annotation['id']
+            "sourceName": ontologySource})
+        f.id = annotation['id']  # TODO connect with real feature Ids
         f.featureSetId = ''
         f.parentIds = []
         f.attributes = protocol.Attributes.fromJsonDict({"vals": {}})
@@ -346,9 +387,9 @@ class AnnotationFactory:
 
         phenotypeInstance = protocol.PhenotypeInstance()
         phenotypeInstance.type = protocol.OntologyTerm.fromJsonDict({
-            "name": annotation[hasObject]['label'],
+            "term": annotation[hasObject]['label'],
             "id": id_,
-            "ontologySource": ontologySource})
+            "sourceName": ontologySource})
         fpa.phenotype = phenotypeInstance
 
         #  ECO or OBI is recommended
@@ -357,12 +398,12 @@ class AnnotationFactory:
             evidence = protocol.Evidence()
             evidence.evidenceType = protocol.OntologyTerm()
             id_, ontology_source = self.namespaceSplit(approval_status['val'])
-            evidence.evidenceType.ontologySource = ontology_source
+            evidence.evidenceType.sourceName = ontology_source
             evidence.evidenceType.id = id_
 
-            evidence.evidenceType.name = ''
+            evidence.evidenceType.term = ''
             if 'label' in approval_status:
-                evidence.evidenceType.name = approval_status['label']
+                evidence.evidenceType.term = approval_status['label']
                 fpa.evidence.append(evidence)
                 if not protocol.Evidence.validate(evidence.toJsonDict()):
                     raise exceptions.RequestValidationFailureException(
