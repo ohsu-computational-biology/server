@@ -7,14 +7,14 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import rdflib
 import urlparse
 import os
 import types
+import rdflib
 
-import ga4gh.protocol as protocol
-import ga4gh.exceptions as exceptions
 import ga4gh.datamodel as datamodel
+import ga4gh.exceptions as exceptions
+import ga4gh.protocol as protocol
 
 
 class AbstractG2PDataset(datamodel.DatamodelObject):
