@@ -136,8 +136,8 @@ class G2PDataset(AbstractG2PDataset):
             locations = []
 
             for _id in location['ids']:
-                    locations.append('?location = <{}> '.format
-                                     (_id['database'] + _id['identifier']))
+                locations.append('?location = <{}{}> '.format
+                                 (_id['database'], _id['identifier']))
             locationClause = "({})".format(" || ".join(locations))
             filters.append(locationClause)
             locationClause = "?l  faldo:location ?location .\n"
@@ -145,8 +145,8 @@ class G2PDataset(AbstractG2PDataset):
         if isinstance(drug, dict):
             drugs = []
             for _id in drug['ids']:
-                    drugs.append('?drug = <{}> '.format
-                                 (_id['database'] + _id['identifier']))
+                    drugs.append('?drug = <{}{}> '.format
+                                 (_id['database'], _id['identifier']))
             drugsClause = "({})".format(" || ".join(drugs))
 
             filters.append(drugsClause)
@@ -154,8 +154,8 @@ class G2PDataset(AbstractG2PDataset):
         if isinstance(disease, dict):
             diseases = []
             for _id in disease['ids']:
-                    diseases.append('?disease = <{}> '.format
-                                    (_id['database'] + _id['identifier']))
+                    diseases.append('?disease = <{}{}> '.format
+                                    (_id['database'], _id['identifier']))
             diseasesClause = "({})".format(" || ".join(diseases))
             filters.append(diseasesClause)
 
@@ -287,7 +287,7 @@ class AnnotationFactory:
         uniqueLocations = set()
         for row in rows:
             if row['p'] == 'http://purl.org/oban/association_has_object':
-                uniqueLocations.add("<" + row['o'] + ">")
+                uniqueLocations.add("<%s>" % row['o'])
 
         for location in uniqueLocations:
             locationQuery = locationQueryTemplate.replace(
