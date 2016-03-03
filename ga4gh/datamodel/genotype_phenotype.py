@@ -159,8 +159,8 @@ class G2PDataset(AbstractG2PDataset):
             diseasesClause = "({})".format(" || ".join(diseases))
             filters.append(diseasesClause)
 
-        filter = "FILTER ({})".format(' && '.join(filters))
-        query = query.replace("%FILTER%", filter)
+        query_filter = "FILTER ({})".format(' && '.join(filters))
+        query = query.replace("%FILTER%", query_filter)
         query = query.replace("%LOCATION%", locationClause)
         return query
 
