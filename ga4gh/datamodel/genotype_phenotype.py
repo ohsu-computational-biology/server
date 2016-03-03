@@ -322,25 +322,23 @@ class AnnotationFactory:
         The value of 's' (subject) is copied to the 'id' property
         """
         # TODO what if 's' is multiply valued?
-        a = {}
+        single_dict = {}
         for row in dictList:
             obj = {'val': row['o']}
             if 'label' in row:
                 obj['label'] = row['label']
 
-            if row['p'] in a and \
-                    a[row['p']].__class__.__name__ != "list":
-                asIs = a[row['p']]
-                a[row['p']] = []
-                a[row['p']].append(asIs)
+            if row['p'] in single_dict and \
+               single_dict[row['p']].__class__.__name__ != "list":
+                single_dict[row['p']] = [single_dict[row['p']]]
 
-            if row['p'] in a:
-                a[row['p']].append(obj)
+            if row['p'] in single_dict:
+                single_dict[row['p']].append(obj)
             else:
-                a[row['p']] = obj
+                single_dict[row['p']] = obj
 
-            a['id'] = row['s']
-        return a
+            single_dict['id'] = row['s']
+        return single_dict
 
     def _toGA4GH(self, annotation):
         """
