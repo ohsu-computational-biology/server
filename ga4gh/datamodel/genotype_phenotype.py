@@ -8,6 +8,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import urlparse
+import rdflib
 
 import ga4gh.datamodel as datamodel
 import ga4gh.exceptions as exceptions
