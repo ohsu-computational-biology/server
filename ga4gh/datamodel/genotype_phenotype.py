@@ -147,42 +147,85 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
                "At least one of [location, drug, disease] must be specified")
         filters = []
 
+        # Strings
         if location and isinstance(location, basestring):
             filters.append('regex(?location_label, "{}")'.format(location))
-            # TODO check this regex (versus string match)
         if drug and isinstance(drug, basestring):
             filters.append('regex(?drug_label, "{}")'.format(drug))
         if disease and isinstance(disease, basestring):
             filters.append('regex(?disease_label, "{}")'.format(disease))
 
+        # location
+        # ExternalIdentifier
         locationClause = ""
-        if isinstance(location, dict):
+        if isinstance(location, dict) and location.get('ids'):
             locations = []
-
-            for id_ in location['ids']:
+            for _id in location['ids']:
                     locations.append('?location = <{}> '.format
-                                     (id_['database'] + id_['identifier']))
+                                     (_id['database'] + _id['identifier']))
             locationClause = "({})".format(" || ".join(locations))
             filters.append(locationClause)
             locationClause = "?l  faldo:location ?location .\n"
+        # OntologyTerms
+        if isinstance(location, dict) and location.get('terms'):
+            locations = []
+            for _term in location['terms']:
+                    if _term.get('id'):
+                        locations.append('?location = <{}> '.format(_term['id']))
+                    else:
+                        locations.append('?location = <{}> '.format
+                                     (self._toNamespaceIdentifier(_term['term'])
+                                     ))
+            locationClause = "({})".format(" || ".join(locations))
+            filters.append(locationClause)
 
-        if isinstance(drug, dict):
+
+        # drug
+        # ExternalIdentifier
+        if isinstance(drug, dict) and drug.get('ids'):
             drugs = []
-            for id_ in drug['ids']:
+            for _id in drug['ids']:
                     drugs.append('?drug = <{}> '.format
-                                 (id_['database'] + id_['identifier']))
+                                 (_id['database'] + _id['identifier']))
             drugsClause = "({})".format(" || ".join(drugs))
-
             filters.append(drugsClause)
 
-        if isinstance(disease, dict):
+        # OntologyTerms
+        if isinstance(drug, dict) and drug.get('terms'):
+            drugs = []
+            for _term in drug['terms']:
+                    if _term.get('id'):
+                        drugs.append('?drug = <{}> '.format(_term['id']))
+                    else:
+                        drugs.append('?drug = <{}> '.format
+                                     (self._toNamespaceIdentifier(_term['term'])
+                                     ))
+            drugsClause = "({})".format(" || ".join(drugs))
+            filters.append(drugsClause)
+
+        # disease
+        # ExternalIdentifier
+        if isinstance(disease, dict) and disease.get('ids'):
             diseases = []
-            for id_ in disease['ids']:
+            for _id in disease['ids']:
                     diseases.append('?disease = <{}> '.format
-                                    (id_['database'] + id_['identifier']))
+                                    (_id['database'] + _id['identifier']))
+            diseasesClause = "({})".format(" || ".join(diseases))
+            filters.append(diseasesClause)
+        # OntologyTerms
+        if isinstance(disease, dict) and disease.get('terms'):
+            diseases = []
+            for _term in disease['terms']:
+                    if _term.get('id'):
+                        diseases.append('?disease = <{}> '.format(_term['id']))
+                    else:
+                        diseases.append('?disease = <{}> '.format
+                                     (self._toNamespaceIdentifier(_term['term'])
+                                     ))
             diseasesClause = "({})".format(" || ".join(diseases))
             filters.append(diseasesClause)
 
+        # apply filters
         filter = "FILTER ({})".format(' && '.join(filters))
         query = query.replace("%FILTER%", filter)
         query = query.replace("%LOCATION%", locationClause)
@@ -196,6 +239,19 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
         # TODO why is this commented out?
         # query += ("LIMIT {} OFFSET {} ".format(pageSize, offset))
         return query
+
+    def _toNamespaceIdentifier(self,term):
+        """
+        Given an ontologyterm.term return namespace identifier.
+        Leverages prefixes already in graph namespace
+        Ex.  "DrugBank:DB01268" -> "http://www.drugbank.ca/drugs/DB01268"
+        """
+        (termPrefix,termId) = term.split(':')
+        for prefix, namespace in self._rdfGraph.namespaces():
+            if prefix == termPrefix:
+                return namespace + termId
+        raise exceptions.NotImplementedException(
+           "Term has a prefix not found in this instance. {}".format(term))
 
     def _detailQuery(self, subject=''):
         """

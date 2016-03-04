@@ -16,7 +16,7 @@ class TestG2P(unittest.TestCase):
     def setUpClass(cls):
         config = {
             "DATA_SOURCE": "tests/data",
-            # "DEBUG" : True
+            "DEBUG" : True
         }
         frontend.reset()
         frontend.configure(
@@ -243,3 +243,40 @@ class TestG2P(unittest.TestCase):
         self.assertEqual(sample_evidence_type['id'], 'c703f7ab')
         self.assertIn('term', sample_evidence_type)
         self.assertEqual(sample_evidence_type['term'], 'early trials')
+
+    def testGenotypePheontypeSearchOntologyTermPrefixTerm(self):
+        """
+        ensure we can read ontology terms usng term
+        """
+        request = protocol.SearchGenotypePhenotypeRequest()
+        request.phenotypeAssociationSetId = self.getPhenotypeAssociationSetId()
+
+        term = protocol.OntologyTerm()
+        term.term = "DrugBank:DB01268"
+        request.evidence = protocol.OntologyTermQuery()
+        request.evidence.terms = [term]
+        response = self.sendPostRequest('/genotypephenotype/search', request)
+        self.assertEqual(200, response.status_code)
+        response = protocol.SearchGenotypePhenotypeResponse().fromJsonString(
+            response.data)
+        self.assertTrue(hasattr(response.associations[0],
+                                'evidence'))
+
+    def testGenotypePheontypeSearchEnsureOntologyTermFeature(self):
+        """
+        Ensure evidence level is serialized in responses
+        """
+        request = protocol.SearchGenotypePhenotypeRequest()
+        request.phenotypeAssociationSetId = self.getPhenotypeAssociationSetId()
+        term = protocol.OntologyTerm()
+        term.term = "CGD:27d2169c"
+        request.feature = protocol.OntologyTermQuery()
+        request.feature.terms = [term]
+        print(request.toJsonString())
+        response = self.sendPostRequest('/genotypephenotype/search', request)
+        print(response.data)
+        self.assertEqual(200, response.status_code)
+        response = protocol.SearchGenotypePhenotypeResponse().fromJsonString(
+            response.data)
+        self.assertTrue(hasattr(response.associations[0],
+                                'evidence'))
