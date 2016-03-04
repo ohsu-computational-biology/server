@@ -240,9 +240,10 @@ class TestG2P(unittest.TestCase):
         self.assertEqual(sample_evidence_type['sourceName'],
                          'http://ohsu.edu/cgd/')
         self.assertIn('id', sample_evidence_type)
-        self.assertEqual(sample_evidence_type['id'], 'c703f7ab')
+        self.assertEqual(sample_evidence_type['id'], 'http://ohsu.edu/cgd/c703f7ab')
         self.assertIn('term', sample_evidence_type)
-        self.assertEqual(sample_evidence_type['term'], 'early trials')
+        self.assertEqual(sample_evidence_type['term'], 'CGD:c703f7ab')
+        self.assertEqual(sample_evidence['description'], 'early trials')
 
     def testGenotypePheontypeSearchOntologyTermPrefixTerm(self):
         """

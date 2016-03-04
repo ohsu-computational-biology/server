@@ -359,6 +359,8 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
         """
         given an annotation dict, return a protocol.FeaturePhenotypeAssociation
         """
+        fpa = None
+
         # annotation keys
         locationKey = 'location'
         hasObject = 'http://purl.org/oban/association_has_object'
@@ -367,68 +369,79 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
         # location keys
         GENO_0000408 = 'http://purl.obolibrary.org/obo/GENO_0000408'
 
-        # Build feature element
         location = annotation[locationKey]
         if GENO_0000408 in location:
+            url = self._toHref(location[GENO_0000408]['val'])
             id_, ontologySource = self.namespaceSplit(
                                         location[GENO_0000408]['val'])
             name = location[GENO_0000408]['label']
         else:
+            url = self._toHref(location['id'])
             id_, ontologySource = self.namespaceSplit(location['id'])
             name = location['id']
 
-        featureTypeTerm = protocol.OntologyTerm().fromJsonDict({
-                "term": name,
-                "id": id_,
-                "sourceName": ontologySource})
+        f = protocol.Feature()
+        f.featureType = protocol.OntologyTerm.fromJsonDict({
+            "term": "{}:{}".format(self._getPrefix(ontologySource),id_),
+            "id": url,
+            "sourceName": None })
+        f.id = self._toHref(annotation['id'])  # TODO connect with real feature Ids
+        f.featureSetId = ''
+        f.parentIds = []
+        f.attributes = protocol.Attributes.fromJsonDict({"vals": {}})
 
-        feature = protocol.Feature().fromJsonDict({
-                "id": annotation['id'],
-                "featureType": featureTypeTerm.toJsonDict()})
-
-        # TODO ontology term backing should be switchable
-        # not hardcoded in the g2p turtle file?
-
-        # Build phenotype element
-        phenotypeId, phenotypeOntologySource = self.namespaceSplit(
+        id_, ontologySource = self.namespaceSplit(
                                        annotation[hasObject]['val'])
+        #import pdb; pdb.set_trace() # DBG
+        fpa = protocol.FeaturePhenotypeAssociation()
+        fpa.id = self._toHref(annotation['id'])
+        fpa.features = [f]
+        fpa.description = None
+        fpa.evidence = []
+        fpa.environmentalContexts = []
 
-        phenotypeOntologyTerm = protocol.OntologyTerm().fromJsonDict({
-            "term": annotation[hasObject]['label'],
-            "sourceName": phenotypeOntologySource})
+        phenotypeInstance = protocol.PhenotypeInstance()
+        phenotypeInstance.type = protocol.OntologyTerm.fromJsonDict({
+            "term": "{}:{}".format(self._getPrefix(ontologySource),id_),
+            "id": self._toHref(annotation[hasObject]['val']),
+            "sourceName": None})
+        phenotypeInstance.description = annotation[hasObject]['label']
+        fpa.phenotype = phenotypeInstance
 
-        phenotypeInstance = protocol.PhenotypeInstance().fromJsonDict({
-            "id": phenotypeId,
-            "type": phenotypeOntologyTerm.toJsonDict()})
-
-        # Build evidence element
         #  ECO or OBI is recommended
         if has_approval_status in annotation:
             approval_status = annotation[has_approval_status]
-            id_, ontologySource = self.namespaceSplit(approval_status['val'])
-            evidenceTypeOntologyTerm = protocol.OntologyTerm().fromJsonDict({
-                "sourceName": ontologySource,
-                "id": id_})
-            evidence = protocol.Evidence().fromJsonDict({
-                "evidenceType": evidenceTypeOntologyTerm.toJsonDict()})
-            evidence.evidenceType.term = ''
+            evidence = protocol.Evidence()
+            evidence.evidenceType = protocol.OntologyTerm()
+            id_, ontology_source = self.namespaceSplit(approval_status['val'])
+            evidence.evidenceType.id = self._toHref(approval_status['val'])
+            evidence.evidenceType.term = "{}:{}".format(
+                                            self._getPrefix(ontology_source),id_)
+            evidence.evidenceType.sourceName = ontology_source
+
             if 'label' in approval_status:
-                evidence.evidenceType.term = approval_status['label']
-                # TODO why are we throwing request validation here?
-                # is this a data quality error?
+                evidence.description = approval_status['label']
+                fpa.evidence.append(evidence)
                 if not protocol.Evidence.validate(evidence.toJsonDict()):
                     raise exceptions.RequestValidationFailureException(
                         evidence.toJsonDict(), protocol.Evidence)
-        # TODO what about multiple features? sequence annotation
-
-        fpa = protocol.FeaturePhenotypeAssociation().fromJsonDict({
-            "id": annotation['id'],
-            "features": [feature.toJsonDict()],
-            "phenotypeAssociationSetId": self.getId(),
-            "evidence": [evidence.toJsonDict()],
-            "phenotype": phenotypeInstance.toJsonDict(),
-            "environmentalContexts": []})
         return fpa
+
+    def _toHref(self,url):
+        """ given a string representation of URI ref, remove angle brackets """
+        return url.replace('<','').replace('>','')
+
+    def _getPrefix(self,url):
+        """
+        Given a url return namespace prefix.
+        Leverages prefixes already in graph namespace
+        Ex.  "http://www.drugbank.ca/drugs/" -> "Drugbank"
+        """
+        for prefix, namespace in self._rdfGraph.namespaces():
+            if namespace.toPython() == url:
+                return prefix
+        raise exceptions.NotImplementedException(
+           "No namespace found for url {}".format(url))
 
     def namespaceSplit(self, url, separator='/'):
         """
