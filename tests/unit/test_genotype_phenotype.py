@@ -19,7 +19,9 @@ class TestPhenotypeAssociationSet(unittest.TestCase):
             ds, "test", None)
 
     def testFormatQuery(self):
-        #  "At least one of [location, environment, phenotype] must be specified"
+        """
+        At least one of [location, environment, phenotype] must be specified
+        """
         query = """
             PREFIX OBAN: <http://purl.org/oban/>
             PREFIX OBO: <http://purl.obolibrary.org/obo/>

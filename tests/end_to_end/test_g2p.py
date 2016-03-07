@@ -227,7 +227,10 @@ class TestG2P(unittest.TestCase):
         self.assertEqual(200, response.status_code)
 
         import json
-        print json.dumps(json.loads(response.data), sort_keys=True, indent=2, separators=(',', ': '))
+        print json.dumps(json.loads(response.data),
+                         sort_keys=True,
+                         indent=2,
+                         separators=(',', ': '))
 
         response = protocol.SearchGenotypePhenotypeResponse().fromJsonString(
             response.data)
