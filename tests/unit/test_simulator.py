@@ -144,7 +144,7 @@ class TestSimulatedPhenotypeAssociationSet(unittest.TestCase):
         phenotypeAssociationSet = g2p.SimulatedPhenotypeAssociationSet(
             dataset, localId, randomSeed)
         self.assertEqual(phenotypeAssociationSet.getAssociations(
-            location=""), [], "Return nothing with no query")
+            feature=""), [], "Return nothing with no query")
 
         fpas = phenotypeAssociationSet.getAssociations("something")
 
