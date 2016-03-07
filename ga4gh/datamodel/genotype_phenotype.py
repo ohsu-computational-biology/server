@@ -26,11 +26,8 @@ class AbstractPhenotypeAssociationSet(datamodel.DatamodelObject):
         pas.name = self.getLocalId()
         pas.id = self.getId()
         pas.datasetId = self.getParentContainer().getId()
-        pas.info = self.getInfo()
+        pas.info = {}
         return pas
-
-    def getInfo(self):
-        return {}
 
 
 class SimulatedPhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
@@ -39,8 +36,8 @@ class SimulatedPhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
             parentContainer, localId)
 
     def getAssociations(
-            self, feature=None, environment=None, phenotype=None, pageSize=None,
-            offset=0):
+            self, feature=None, environment=None, phenotype=None,
+            pageSize=None, offset=0):
         if feature or environment or phenotype:
             fpa = protocol.FeaturePhenotypeAssociation()
             fpa.id = "test"
@@ -81,15 +78,14 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
 
         # extract version
         cgdTTL = rdflib.URIRef("http://data.monarchinitiative.org/ttl/cgd.ttl")
-        versionInfo = rdflib.URIRef(u'http://www.w3.org/2002/07/owl#versionInfo')
+        versionInfo = rdflib.URIRef(
+            u'http://www.w3.org/2002/07/owl#versionInfo')
         self._version = None
         for s, p, o in self._rdfGraph.triples((cgdTTL, versionInfo, None)):
             self._version = o.toPython()
 
-
-    def getAssociations(
-            self, feature=None, environment=None, phenotype=None, pageSize=None,
-            offset=0):
+    def getAssociations(self, feature=None, environment=None,
+                        phenotype=None, pageSize=None, offset=0):
         """
         This query is the main search mechanism.
         It queries the graph for annotations that match the
@@ -97,31 +93,9 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
         """
         # query to do search
         query = self._formatFilterQuery(feature, environment, phenotype)
-        # DBG print(query)
         associations = self._rdfGraph.query(query)
-        # DBG print(associations.bindings)
-        # associations is now a dict with the following
-# DBG TODO GS - please read this block and document as English comment
-# [
-#   {
-#    rdflib.term.Variable(u'environment'):
-#     rdflib.term.URIRef(u'http://www.drugbank.ca/drugs/DB00619'),
-#    rdflib.term.Variable(u'feature'):
-#     rdflib.term.URIRef(u'http://ohsu.edu/cgd/27d2169c'),
-#    rdflib.term.Variable(u'environment_label'):
-#     rdflib.term.Literal(u'imatinib'),
-#    rdflib.term.Variable(u'feature_label'):
-#     rdflib.term.Literal(u'KIT  wild type no mutation'),
-#    rdflib.term.Variable(u'association'):
-#     rdflib.term.URIRef(u'http://ohsu.edu/cgd/4657f28c'),
-#    rdflib.term.Variable(u'phenotype_label'):
-#     rdflib.term.Literal(u'GIST with decreased sensitivity to therapy'),
-#    rdflib.term.Variable(u'sources'):
-#     rdflib.term.Literal(u'http://www.ncbi.nlm.nih.gov/pubmed/18955458'),
-#    rdflib.term.Variable(u'phenotype'):
-#     rdflib.term.URIRef(u'http://ohsu.edu/cgd/87752f6c')
-#   }
-# ]
+        # associations is now a dict with rdflib terms with variable and
+        # URIrefs or literals
 
         # given get the details for the feature,phenotype and environment
         associations_details = self._detailTuples(
@@ -129,80 +103,33 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
                                         associations))
         # association_details is now a list of {subject,predicate,object}
         # for each of the association detail
-# [ { u'object': u'http://purl.obolibrary.org/obo/SO_0001059',
-#     u'predicate': u'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
-#     u'subject': u'http://ohsu.edu/cgd/27d2169c'},
-#     .... ]
 
         HAS_QUALITY = 'http://purl.obolibrary.org/obo/BFO_0000159'
         associationList = []
-        for association in associations.bindings:
-            if '?feature' in association:
-                association = self._bindingsToDict(association)
+        for assoc in associations.bindings:
+            if '?feature' in assoc:
+                association = self._bindingsToDict(assoc)
                 association['feature'] = self._getDetails(
-                                            association['feature'],
-                                            associations_details)
+                    association['feature'],
+                    associations_details)
                 association['environment'] = self._getDetails(
-                                        association['environment'],
-                                        associations_details)
+                    association['environment'],
+                    associations_details)
                 association['phenotype'] = self._getDetails(
-                                              association['phenotype'],
-                                              associations_details)
+                    association['phenotype'],
+                    associations_details)
                 association['evidence'] = association['phenotype'][HAS_QUALITY]
                 association['id'] = association['association']
                 associationList.append(association)
-# TODO - GS Please read and create English comment
-# our association list is now a list of dicts
-# [ {
-# u'association':
-#  u'http://ohsu.edu/cgd/4657f28c',
-#     u'environment':
-#      { u'http://purl.obolibrary.org/obo/RO_0002606':
-#         u'http://ohsu.edu/cgd/b40a93d7',
-#        u'http://www.w3.org/1999/02/22-rdf-syntax-ns#type':
-#         u'http://www.w3.org/2002/07/owl#Class',
-#        u'http://www.w3.org/2000/01/rdf-schema#label':
-#         u'imatinib',
-#        u'http://www.w3.org/2000/01/rdf-schema#subClassOf':
-#         u'http://purl.obolibrary.org/obo/CHEBI_23888',
-#        u'id':
-#         u'http://www.drugbank.ca/drugs/DB00619'
-#      },
-#     u'environment_label':
-#       u'imatinib',
-#     u'evidence':
-#       u'http://ohsu.edu/cgd/decreased_sensitivity',
-#     u'feature':
-#       { u'http://purl.obolibrary.org/obo/RO_0002200':
-#           u'http://ohsu.edu/cgd/87752f6c',
-#         u'http://www.w3.org/1999/02/22-rdf-syntax-ns#type':
-#           u'http://purl.obolibrary.org/obo/SO_0001059',
-#         u'http://www.w3.org/2000/01/rdf-schema#label':
-#           u'KIT  wild type no mutation',
-#         u'id':
-#           u'http://ohsu.edu/cgd/27d2169c'
-#       },
-#     u'feature_label':
-#       u'KIT  wild type no mutation',
-#     u'phenotype':
-#       { u'http://purl.obolibrary.org/obo/BFO_0000159':
-#           u'http://ohsu.edu/cgd/decreased_sensitivity',
-#         u'http://www.w3.org/1999/02/22-rdf-syntax-ns#type':
-#           u'http://purl.obolibrary.org/obo/OMIM_606764',
-#         u'http://www.w3.org/2000/01/rdf-schema#label':
-#           u'GIST with decreased sensitivity to therapy',
-#         u'id':
-#           u'http://ohsu.edu/cgd/87752f6c'},
-#         u'phenotype_label':
-#           u'GIST with decreased sensitivity to therapy',
-#     u'sources':
-#       u'http://www.ncbi.nlm.nih.gov/pubmed/18955458'
-#  }]
+
+                # our association list is now a list of dicts with the
+                # elements of an association: environment, evidence,
+                # feature, phenotype and sources, each with their
+                # references (labels or URIrefs)
 
         # create GA4GH objects
-        associations = []
-        for association in associationList:
-            associations.append(self._toGA4GH(association))
+        associations = [self._toGA4GH(assoc) for
+                        assoc in associationList]
 
         return associations
 
@@ -218,33 +145,6 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
                 detailedURIRef.append(row['feature'])
                 detailedURIRef.append(row['environment'])
                 detailedURIRef.append(row['phenotype'])
-
-# TESTING ... create test data
-# obo = rdflib.Namespace('http://purl.obolibrary.org/obo/')
-# oban = rdflib.Namespace('http://purl.org/oban/')
-# dc = rdflib.Namespace('http://purl.org/dc/elements/1.1/')
-# cgd = rdflib.Namespace('http://ohsu.edu/cgd/')
-# faldo = rdflib.Namespace('http://biohackathon.org/resource/faldo#')
-# drugBank = rdflib.Namespace('http://www.drugbank.ca/drugs/')
-#
-# namespace_manager = rdflib.namespace.NamespaceManager(rdflib.Graph())
-# namespace_manager.bind('OBO', obo, override=False)
-# namespace_manager.bind('OBAN', oban, override=False)
-# namespace_manager.bind('CGD', cgd, override=False)
-# namespace_manager.bind('dc', dc, override=False)
-# namespace_manager.bind('faldo', faldo, override=False)
-# namespace_manager.bind('DrugBank', drugBank, override=False)
-#
-# g = rdflib.Graph()
-# g.namespace_manager = namespace_manager
-# for row in associations:
-#     for s, p, o in self._rdfGraph.triples((row['association'], None, None)):
-#         g.add((s, p, o))
-#
-# for uriRef in detailedURIRef:
-#     for s, p, o in self._rdfGraph.triples((uriRef, None, None)):
-#         g.add((s, p, o))
-# print(g.serialize(format='n3'))
 
         return detailedURIRef
 
@@ -270,8 +170,8 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
         create a dict of plain text
         """
         myDict = {}
-        for k, v in bindings.iteritems():
-            myDict[k.toPython().replace('?', '')] = v.toPython()
+        for key, val in bindings.iteritems():
+            myDict[key.toPython().replace('?', '')] = val.toPython()
         return myDict
 
     def _addDataFile(self, filename):
@@ -293,7 +193,80 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
             associationDetail['id'] = uriRef
         return associationDetail
 
-    def _formatFilterQuery(self, feature=None, environment=None, phenotype=None):
+    def _formatExternalIdentifier(self, element, element_type):
+        """
+        Formats the external identifiers for query
+        """
+        elementClause = None
+        if isinstance(element, dict) and element.get('ids'):
+            elements = []
+            for _id in element['ids']:
+                elements.append('?{} = <{}{}> '.format(
+                    element_type, _id['database'], _id['identifier']))
+            elementClause = "({})".format(" || ".join(elements))
+        return elementClause
+
+    def _formatOntologyTerm(self, element, element_type):
+        """
+        Formats the ontology terms for query
+        """
+        elementClause = None
+        if isinstance(element, dict) and element.get('terms'):
+            elements = []
+            for _term in element['terms']:
+                if _term.get('id'):
+                    elements.append('?{} = <{}> '.format(
+                        element_type, _term['id']))
+                else:
+                    elements.append('?{} = <{}> '.format(
+                        element_type, self._toNamespaceURL(_term['term'])))
+            elementClause = "({})".format(" || ".join(elements))
+        return elementClause
+
+    def _setFilters(self, feature=None, environment=None, phenotype=None):
+        """
+        Adds filters for query
+        """
+        filters = []
+        # feature
+        # ExternalIdentifier
+        featureClause = self._formatExternalIdentifier(feature, 'feature')
+        if featureClause:
+            filters.append(featureClause)
+        # OntologyTerms
+        featureOntologytermsClause = self._formatOntologyTerm(feature,
+                                                              'feature')
+        if featureOntologytermsClause:
+            filters.append(featureOntologytermsClause)
+
+        # environment
+        # ExternalIdentifier
+        environmentClause = self._formatExternalIdentifier(environment,
+                                                           'environment')
+        if environmentClause:
+            filters.append(environmentClause)
+        # OntologyTerms
+        envOntologytermsClause = self._formatOntologyTerm(environment,
+                                                          'environment')
+        if envOntologytermsClause:
+            filters.append(envOntologytermsClause)
+
+        # phenotype
+        # ExternalIdentifier
+        phenotypeClause = self._formatExternalIdentifier(phenotype,
+                                                         'phenotype')
+        if phenotypeClause:
+            filters.append(phenotypeClause)
+        # OntologyTerms
+        phenoOntolgytermsClause = self._formatOntologyTerm(phenotype,
+                                                           'phenotype')
+        if phenoOntolgytermsClause:
+            filters.append(phenoOntolgytermsClause)
+
+        return filters
+
+    def _formatFilterQuery(self, feature=None, environment=None,
+                           phenotype=None):
         """
         Generate a formatted sparql query with appropriate filters
         """
@@ -330,83 +303,20 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
         if feature is None and environment is None and phenotype is None:
             # TODO is this really the exception we want to throw?
             raise exceptions.NotImplementedException(
-               "At least one of [feature, environment, phenotype] must be specified")
+                "At least one of [feature, environment, phenotype] "
+                "must be specified")
         filters = []
 
         # Strings
         if feature and isinstance(feature, basestring):
             filters.append('regex(?feature_label, "{}")'.format(feature))
         if environment and isinstance(environment, basestring):
-            filters.append('regex(?environment_label, "{}")'.format(environment))
+            filters.append(
+                'regex(?environment_label, "{}")'.format(environment))
         if phenotype and isinstance(phenotype, basestring):
             filters.append('regex(?phenotype_label, "{}")'.format(phenotype))
 
-        # feature
-        # ExternalIdentifier
-        featureClause = ""
-        if isinstance(feature, dict) and feature.get('ids'):
-            features = []
-            for _id in feature['ids']:
-                    features.append('?feature = <{}> '.format
-                                     (_id['database'] + _id['identifier']))
-            featureClause = "({})".format(" || ".join(features))
-            filters.append(featureClause)
-        # OntologyTerms
-        if isinstance(feature, dict) and feature.get('terms'):
-            features = []
-            for _term in feature['terms']:
-                    if _term.get('id'):
-                        features.append('?feature = <{}> '.format
-                                         (_term['id']))
-                    else:
-                        features.append('?feature = <{}> '.format
-                                         (self._toNamespaceURL(_term['term'])))
-            featureClause = "({})".format(" || ".join(features))
-            filters.append(featureClause)
-
-        # environment
-        # ExternalIdentifier
-        if isinstance(environment, dict) and environment.get('ids'):
-            environments = []
-            for _id in environment['ids']:
-                    environments.append('?environment = <{}> '.format
-                                 (_id['database'] + _id['identifier']))
-            environmentsClause = "({})".format(" || ".join(environments))
-            filters.append(environmentsClause)
-
-        # OntologyTerms
-        if isinstance(environment, dict) and environment.get('terms'):
-            environments = []
-            for _term in environment['terms']:
-                    if _term.get('id'):
-                        environments.append('?environment = <{}> '.format(_term['id']))
-                    else:
-                        environments.append('?environment = <{}> '.format
-                                     (self._toNamespaceURL(_term['term'])))
-            environmentsClause = "({})".format(" || ".join(environments))
-            filters.append(environmentsClause)
-
-        # phenotype
-        # ExternalIdentifier
-        if isinstance(phenotype, dict) and phenotype.get('ids'):
-            phenotypes = []
-            for _id in phenotype['ids']:
-                    phenotypes.append('?phenotype = <{}> '.format
-                                    (_id['database'] + _id['identifier']))
-            phenotypesClause = "({})".format(" || ".join(phenotypes))
-            filters.append(phenotypesClause)
-        # OntologyTerms
-        if isinstance(phenotype, dict) and phenotype.get('terms'):
-            phenotypes = []
-            for _term in phenotype['terms']:
-                    if _term.get('id'):
-                        phenotypes.append('?phenotype = <{}> '.format
-                                        (_term['id']))
-                    else:
-                        phenotypes.append('?phenotype = <{}> '.format
-                                        (self._toNamespaceURL(_term['term'])))
-            phenotypesClause = "({})".format(" || ".join(phenotypes))
-            filters.append(phenotypesClause)
+        filters += self._setFilters(feature, environment, phenotype)
 
         # apply filters
         filter = "FILTER ({})".format(' && '.join(filters))
@@ -422,7 +332,7 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
         (termPrefix, termId) = term.split(':')
         for prefix, namespace in self._rdfGraph.namespaces():
             if prefix == termPrefix:
-                return namespace + termId
+                return "".join([namespace, termId])
         raise exceptions.NotImplementedException(
            "Term has a prefix not found in this instance. {}".format(term))
 
@@ -444,7 +354,7 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
         Ex.  "http://www.drugbank.ca/drugs/" -> "Drugbank"
         """
         for prefix, namespace in self._rdfGraph.namespaces():
-            if namespace.toPython() == url or namespace == url :
+            if namespace.toPython() == url or namespace == url:
                 return prefix
         raise exceptions.NotImplementedException(
            "No namespace found for url {}".format(url))
@@ -466,52 +376,12 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
         return a protocol.FeaturePhenotypeAssociation
         """
         fpa = None
-# DBG TODO GS - please read this block and document as English comment
-# [ {
-# u'association':
-#  u'http://ohsu.edu/cgd/4657f28c',
-#     u'environment':
-#      { u'http://purl.obolibrary.org/obo/RO_0002606':
-#         u'http://ohsu.edu/cgd/b40a93d7',
-#        u'http://www.w3.org/1999/02/22-rdf-syntax-ns#type':
-#         u'http://www.w3.org/2002/07/owl#Class',
-#        u'http://www.w3.org/2000/01/rdf-schema#label':
-#         u'imatinib',
-#        u'http://www.w3.org/2000/01/rdf-schema#subClassOf':
-#         u'http://purl.obolibrary.org/obo/CHEBI_23888',
-#        u'id':
-#         u'http://www.drugbank.ca/drugs/DB00619'
-#      },
-#     u'environment_label':
-#       u'imatinib',
-#     u'evidence':
-#       u'http://ohsu.edu/cgd/decreased_sensitivity',
-#     u'feature':
-#       { u'http://purl.obolibrary.org/obo/RO_0002200':
-#           u'http://ohsu.edu/cgd/87752f6c',
-#         u'http://www.w3.org/1999/02/22-rdf-syntax-ns#type':
-#           u'http://purl.obolibrary.org/obo/SO_0001059',
-#         u'http://www.w3.org/2000/01/rdf-schema#label':
-#           u'KIT  wild type no mutation',
-#         u'id':
-#           u'http://ohsu.edu/cgd/27d2169c'
-#       },
-#     u'feature_label':
-#       u'KIT  wild type no mutation',
-#     u'phenotype':
-#       { u'http://purl.obolibrary.org/obo/BFO_0000159':
-#           u'http://ohsu.edu/cgd/decreased_sensitivity',
-#         u'http://www.w3.org/1999/02/22-rdf-syntax-ns#type':
-#           u'http://purl.obolibrary.org/obo/OMIM_606764',
-#         u'http://www.w3.org/2000/01/rdf-schema#label':
-#           u'GIST with decreased sensitivity to therapy',
-#         u'id':
-#           u'http://ohsu.edu/cgd/87752f6c'},
-#         u'phenotype_label':
-#           u'GIST with decreased sensitivity to therapy',
-#     u'sources':
-#       u'http://www.ncbi.nlm.nih.gov/pubmed/18955458'
-#  }]
+
+        # The association dict has the keys: environment, environment
+        # label, evidence, feature label, phenotype and sources. Each
+        # key's value is a dict with the RDF predicates as keys and
+        # subject as values
+
         # annotation keys
         TYPE = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type'
         LABEL = 'http://www.w3.org/2000/01/rdf-schema#label'
@@ -531,20 +401,21 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
             "term": feature[TYPE],
             "id": feature['id'],
             "sourceVersion": self._version,
-            "sourceName": self._getPrefix(self._getPrefixURL(association['id']))
+            "sourceName": self._getPrefix(
+                self._getPrefixURL(association['id']))
         })
         # TODO connect with real feature Ids
         f.id = feature['id']
         f.referenceName = feature[LABEL]
         f.attributes = protocol.Attributes.fromJsonDict(
-                                        {"vals":  feature })
+            {"vals":  feature})
         f.childIds = []
 
         fpa = protocol.FeaturePhenotypeAssociation()
         fpa.id = association['id']
         fpa.features = [f]
-        msg = 'Association: genotype:[{}] phenotype:[{}] environment:[{}] ' + \
-                'evidence:[{}] publications:[{}]'
+        msg = 'Association: genotype:[{}] phenotype:[{}] environment:[{}] ' \
+              'evidence:[{}] publications:[{}]'
         fpa.description = msg.format(
             association['feature_label'],
             association['phenotype_label'],
@@ -558,7 +429,8 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
             "term": association['evidence_type'],
             "id": phenotype['id'],
             "sourceVersion": self._version,
-            "sourceName": self._getPrefix(self._getPrefixURL(association['id']))
+            "sourceName": self._getPrefix(
+                self._getPrefixURL(association['id']))
         })
         evidence.description = self._getIdentifier(association['evidence'])
         # TODO there is nowhere in evidence to place list of sources?
@@ -569,15 +441,14 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
         environment = association['environment']
         environmentalContext.id = environment['id']
         environmentalContext.description = association['environment_label']
-
-        environmentalContext.environmentType = \
-        protocol.OntologyTerm.fromJsonDict({
+        envType = protocol.OntologyTerm.fromJsonDict({
             "id": 'http://purl.obolibrary.org/obo/RO_0002606',
             "term": environment['id'],
             "sourceVersion": self._version,
-            "sourceName": self._getPrefix(self._getPrefixURL(association['id']))
+            "sourceName": self._getPrefix(
+                self._getPrefixURL(association['id']))
         })
-
+        environmentalContext.environmentType = envType
         fpa.environmentalContexts = [environmentalContext]
 
         phenotypeInstance = protocol.PhenotypeInstance()
@@ -585,19 +456,11 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
             "term": phenotype[TYPE],
             "id": phenotype['id'],
             "sourceVersion": self._version,
-            "sourceName": self._getPrefix(self._getPrefixURL(association['id']))
+            "sourceName": self._getPrefix(
+                self._getPrefixURL(association['id']))
         })
         phenotypeInstance.description = phenotype[LABEL]
         fpa.phenotype = phenotypeInstance
         fpa.phenotypeAssociationSetId = self.getId()
-
-# # DBG
-# if not protocol.FeaturePhenotypeAssociation.validate(fpa.toJsonDict()):
-#     # import pdb; pdb.set_trace() # DBG
-#     import pprint
-#     pp = pprint.PrettyPrinter(indent=2)
-#     pp.pprint(f.toJsonString())
-#     raise exceptions.RequestValidationFailureException(
-#         fpa.toJsonDict(), protocol.FeaturePhenotypeAssociation)
 
         return fpa
