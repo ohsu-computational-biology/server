@@ -9,9 +9,9 @@ from __future__ import unicode_literals
 
 import rdflib
 
-import ga4gh.protocol as protocol
-import ga4gh.exceptions as exceptions
 import ga4gh.datamodel as datamodel
+import ga4gh.exceptions as exceptions
+import ga4gh.protocol as protocol
 
 
 class AbstractPhenotypeAssociationSet(datamodel.DatamodelObject):
@@ -39,8 +39,8 @@ class SimulatedPhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
             parentContainer, localId)
 
     def getAssociations(
-            self, feature=None, environment=None, phenotype=None, pageSize=None,
-            offset=0):
+            self, feature=None, environment=None, phenotype=None,
+            pageSize=None, offset=0):
         if feature or environment or phenotype:
             fpa = protocol.FeaturePhenotypeAssociation()
             fpa.id = "test"
@@ -81,15 +81,14 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
 
         # extract version
         cgdTTL = rdflib.URIRef("http://data.monarchinitiative.org/ttl/cgd.ttl")
-        versionInfo = rdflib.URIRef(u'http://www.w3.org/2002/07/owl#versionInfo')
+        versionInfo = rdflib.URIRef(
+            u'http://www.w3.org/2002/07/owl#versionInfo')
         self._version = None
         for s, p, o in self._rdfGraph.triples((cgdTTL, versionInfo, None)):
             self._version = o.toPython()
 
-
-    def getAssociations(
-            self, feature=None, environment=None, phenotype=None, pageSize=None,
-            offset=0):
+    def getAssociations(self, feature=None, environment=None,
+                        phenotype=None, pageSize=None, offset=0):
         """
         This query is the main search mechanism.
         It queries the graph for annotations that match the
@@ -293,7 +292,8 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
             associationDetail['id'] = uriRef
         return associationDetail
 
-    def _formatFilterQuery(self, feature=None, environment=None, phenotype=None):
+    def _formatFilterQuery(self, feature=None, environment=None,
+                           phenotype=None):
         """
         Generate a formatted sparql query with appropriate filters
         """
@@ -330,14 +330,16 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
         if feature is None and environment is None and phenotype is None:
             # TODO is this really the exception we want to throw?
             raise exceptions.NotImplementedException(
-               "At least one of [feature, environment, phenotype] must be specified")
+                "At least one of [feature, environment, phenotype] "
+                "must be specified")
         filters = []
 
         # Strings
         if feature and isinstance(feature, basestring):
             filters.append('regex(?feature_label, "{}")'.format(feature))
         if environment and isinstance(environment, basestring):
-            filters.append('regex(?environment_label, "{}")'.format(environment))
+            filters.append(
+                'regex(?environment_label, "{}")'.format(environment))
         if phenotype and isinstance(phenotype, basestring):
             filters.append('regex(?phenotype_label, "{}")'.format(phenotype))
 
@@ -347,20 +349,20 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
         if isinstance(feature, dict) and feature.get('ids'):
             features = []
             for _id in feature['ids']:
-                    features.append('?feature = <{}> '.format
-                                     (_id['database'] + _id['identifier']))
+                features.append('?feature = <{}> '.format(
+                    _id['database'] + _id['identifier']))
             featureClause = "({})".format(" || ".join(features))
             filters.append(featureClause)
         # OntologyTerms
         if isinstance(feature, dict) and feature.get('terms'):
             features = []
             for _term in feature['terms']:
-                    if _term.get('id'):
-                        features.append('?feature = <{}> '.format
-                                         (_term['id']))
-                    else:
-                        features.append('?feature = <{}> '.format
-                                         (self._toNamespaceURL(_term['term'])))
+                if _term.get('id'):
+                    features.append('?feature = <{}> '.format(
+                        _term['id']))
+                else:
+                    features.append('?feature = <{}> '.format(
+                        self._toNamespaceURL(_term['term'])))
             featureClause = "({})".format(" || ".join(features))
             filters.append(featureClause)
 
@@ -369,8 +371,8 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
         if isinstance(environment, dict) and environment.get('ids'):
             environments = []
             for _id in environment['ids']:
-                    environments.append('?environment = <{}> '.format
-                                 (_id['database'] + _id['identifier']))
+                environments.append('?environment = <{}> '.format(
+                    _id['database'] + _id['identifier']))
             environmentsClause = "({})".format(" || ".join(environments))
             filters.append(environmentsClause)
 
@@ -378,11 +380,12 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
         if isinstance(environment, dict) and environment.get('terms'):
             environments = []
             for _term in environment['terms']:
-                    if _term.get('id'):
-                        environments.append('?environment = <{}> '.format(_term['id']))
-                    else:
-                        environments.append('?environment = <{}> '.format
-                                     (self._toNamespaceURL(_term['term'])))
+                if _term.get('id'):
+                    environments.append(
+                        '?environment = <{}> '.format(_term['id']))
+                else:
+                    environments.append('?environment = <{}> '.format
+                                        (self._toNamespaceURL(_term['term'])))
             environmentsClause = "({})".format(" || ".join(environments))
             filters.append(environmentsClause)
 
@@ -391,20 +394,20 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
         if isinstance(phenotype, dict) and phenotype.get('ids'):
             phenotypes = []
             for _id in phenotype['ids']:
-                    phenotypes.append('?phenotype = <{}> '.format
-                                    (_id['database'] + _id['identifier']))
+                phenotypes.append('?phenotype = <{}> '.format(
+                    _id['database'] + _id['identifier']))
             phenotypesClause = "({})".format(" || ".join(phenotypes))
             filters.append(phenotypesClause)
         # OntologyTerms
         if isinstance(phenotype, dict) and phenotype.get('terms'):
             phenotypes = []
             for _term in phenotype['terms']:
-                    if _term.get('id'):
-                        phenotypes.append('?phenotype = <{}> '.format
-                                        (_term['id']))
-                    else:
-                        phenotypes.append('?phenotype = <{}> '.format
-                                        (self._toNamespaceURL(_term['term'])))
+                if _term.get('id'):
+                    phenotypes.append('?phenotype = <{}> '.format(
+                        _term['id']))
+                else:
+                    phenotypes.append('?phenotype = <{}> '.format(
+                        self._toNamespaceURL(_term['term'])))
             phenotypesClause = "({})".format(" || ".join(phenotypes))
             filters.append(phenotypesClause)
 
@@ -444,7 +447,7 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
         Ex.  "http://www.drugbank.ca/drugs/" -> "Drugbank"
         """
         for prefix, namespace in self._rdfGraph.namespaces():
-            if namespace.toPython() == url or namespace == url :
+            if namespace.toPython() == url or namespace == url:
                 return prefix
         raise exceptions.NotImplementedException(
            "No namespace found for url {}".format(url))
@@ -531,20 +534,21 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
             "term": feature[TYPE],
             "id": feature['id'],
             "sourceVersion": self._version,
-            "sourceName": self._getPrefix(self._getPrefixURL(association['id']))
+            "sourceName": self._getPrefix(
+                self._getPrefixURL(association['id']))
         })
         # TODO connect with real feature Ids
         f.id = feature['id']
         f.referenceName = feature[LABEL]
         f.attributes = protocol.Attributes.fromJsonDict(
-                                        {"vals":  feature })
+            {"vals":  feature})
         f.childIds = []
 
         fpa = protocol.FeaturePhenotypeAssociation()
         fpa.id = association['id']
         fpa.features = [f]
-        msg = 'Association: genotype:[{}] phenotype:[{}] environment:[{}] ' + \
-                'evidence:[{}] publications:[{}]'
+        msg = 'Association: genotype:[{}] phenotype:[{}] environment:[{}] ' \
+              'evidence:[{}] publications:[{}]'
         fpa.description = msg.format(
             association['feature_label'],
             association['phenotype_label'],
@@ -558,7 +562,8 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
             "term": association['evidence_type'],
             "id": phenotype['id'],
             "sourceVersion": self._version,
-            "sourceName": self._getPrefix(self._getPrefixURL(association['id']))
+            "sourceName": self._getPrefix(
+                self._getPrefixURL(association['id']))
         })
         evidence.description = self._getIdentifier(association['evidence'])
         # TODO there is nowhere in evidence to place list of sources?
@@ -569,15 +574,14 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
         environment = association['environment']
         environmentalContext.id = environment['id']
         environmentalContext.description = association['environment_label']
-
-        environmentalContext.environmentType = \
-        protocol.OntologyTerm.fromJsonDict({
+        envType = protocol.OntologyTerm.fromJsonDict({
             "id": 'http://purl.obolibrary.org/obo/RO_0002606',
             "term": environment['id'],
             "sourceVersion": self._version,
-            "sourceName": self._getPrefix(self._getPrefixURL(association['id']))
+            "sourceName": self._getPrefix(
+                self._getPrefixURL(association['id']))
         })
-
+        environmentalContext.environmentType = envType
         fpa.environmentalContexts = [environmentalContext]
 
         phenotypeInstance = protocol.PhenotypeInstance()
@@ -585,7 +589,8 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
             "term": phenotype[TYPE],
             "id": phenotype['id'],
             "sourceVersion": self._version,
-            "sourceName": self._getPrefix(self._getPrefixURL(association['id']))
+            "sourceName": self._getPrefix(
+                self._getPrefixURL(association['id']))
         })
         phenotypeInstance.description = phenotype[LABEL]
         fpa.phenotype = phenotypeInstance
