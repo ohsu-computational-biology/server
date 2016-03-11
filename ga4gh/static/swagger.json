@@ -1,0 +1,172 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "description": "GA4GH Reference Server",
+    "version": "0.2.0",
+    "title": "GA4GH Reference Server",
+    "contact": {
+      "email": "someone@ucsc.edu"
+    },
+    "license": {
+      "name": "Apache 2.0",
+      "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+    }
+  },
+  "host": "localhost:8000",
+  "tags": [
+    {
+      "name": "variants",
+      "description": "Variant endpoints",
+      "externalDocs": {
+        "description": "Find out more",
+        "url": "documentation site"
+      }
+    }
+  ],
+  "schemes": [
+    "http"
+  ],
+  "paths": {
+    "/variants/{id}": {
+      "get": {
+        "tags": [
+          "variants"
+        ],
+        "description": "Returns variant for a given ID",
+        "summary": "Find variants by ID",
+        "operationId": "getVariant",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "variant response",
+            "schema": {
+                "$ref": "#/definitions/Variant"
+            }
+          }
+        }
+      },
+      "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "ID of the variant",
+            "required": true,
+            "type": "string"
+          }
+        ]
+    },
+    "/variants/search": {
+      "post": {
+        "tags": [
+          "variants"
+        ],
+        "summary": "Search for variants",
+        "description": "",
+        "operationId": "searchVariants",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "description": "Search request",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/variant"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "404": {
+            "description": "The specified Variant Set ID was not found"
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "Variant": {
+      "type": "object",
+      "required": [
+        "id",
+        "variantSetId",
+        "referenceName",
+        "start",
+        "end",
+        "referenceBases",
+        "alternateBases",
+        "info",
+        "calls"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "variantSetId": {
+          "type": "string"
+        },
+        "names": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "created": {
+          "type": "int64"
+        },
+        "updated": {
+          "type": "int64"
+        },
+        "referenceName": {
+          "type": "string"
+        },
+        "start": {
+          "type": "long"
+        },
+        "end": {
+          "type": "long"
+        },
+        "referenceBases": {
+          "type": "string"
+        },
+        "alternateBases": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "info": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "calls": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "externalDocs": {
+    "description": "Find out more about GA4GH",
+    "url": "http://ga4gh.org"
+  }
+}
