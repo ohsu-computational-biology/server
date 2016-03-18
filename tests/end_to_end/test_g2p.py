@@ -16,7 +16,7 @@ class TestG2P(unittest.TestCase):
     def setUpClass(cls):
         config = {
             "DATA_SOURCE": "tests/data",
-            "DEBUG": True
+            # "DEBUG": True
         }
         frontend.reset()
         frontend.configure(
