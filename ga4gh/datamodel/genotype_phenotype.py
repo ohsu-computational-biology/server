@@ -407,8 +407,11 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
         # TODO connect with real feature Ids
         f.id = feature['id']
         f.referenceName = feature[LABEL]
+        vals = {}
+        for key in feature:
+            vals[key] = [feature[key]]
         f.attributes = protocol.Attributes.fromJsonDict(
-            {"vals":  feature})
+            {"vals":  vals})
         f.childIds = []
 
         fpa = protocol.FeaturePhenotypeAssociation()
