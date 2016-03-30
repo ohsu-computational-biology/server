@@ -13,16 +13,14 @@
         }
     },
     "host": "localhost:8000",
-    "tags": [
-        {
-            "name": "variants",
-            "description": "Variant endpoints",
-            "externalDocs": {
-                "description": "Find out more",
-                "url": "documentation site"
-            }
+    "tags": [{
+        "name": "variants",
+        "description": "Variant endpoints",
+        "externalDocs": {
+            "description": "Find out more",
+            "url": "documentation site"
         }
-    ],
+    }],
     "schemes": [
         "http"
     ],
@@ -47,15 +45,13 @@
                     }
                 }
             },
-            "parameters": [
-                {
-                    "name": "id",
-                    "in": "path",
-                    "description": "ID of the reference",
-                    "required": true,
-                    "type": "string"
-                }
-            ]
+            "parameters": [{
+                "name": "id",
+                "in": "path",
+                "description": "ID of the reference",
+                "required": true,
+                "type": "string"
+            }]
         },
         "/referencesets/{id}": {
             "get": {
@@ -127,17 +123,15 @@
                 "produces": [
                     "application/json"
                 ],
-                "parameters": [
-                    {
-                        "in": "body",
-                        "name": "body",
-                        "description": "Search request",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/callsets"
-                        }
+                "parameters": [{
+                    "in": "body",
+                    "name": "body",
+                    "description": "Search request",
+                    "required": true,
+                    "schema": {
+                        "$ref": "#/definitions/callsets"
                     }
-                ],
+                }],
                 "responses": {
                     "200": {
                         "description": "Success"
@@ -165,17 +159,15 @@
                 "produces": [
                     "application/json"
                 ],
-                "parameters": [
-                    {
-                        "in": "body",
-                        "name": "body",
-                        "description": "Search request",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/readgroupset"
-                        }
+                "parameters": [{
+                    "in": "body",
+                    "name": "body",
+                    "description": "Search request",
+                    "required": true,
+                    "schema": {
+                        "$ref": "#/definitions/readgroupset"
                     }
-                ],
+                }],
                 "responses": {
                     "200": {
                         "description": "Success"
@@ -203,17 +195,15 @@
                 "produces": [
                     "application/json"
                 ],
-                "parameters": [
-                    {
-                        "in": "body",
-                        "name": "body",
-                        "description": "Search request",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/read"
-                        }
+                "parameters": [{
+                    "in": "body",
+                    "name": "body",
+                    "description": "Search request",
+                    "required": true,
+                    "schema": {
+                        "$ref": "#/definitions/read"
                     }
-                ],
+                }],
                 "responses": {
                     "200": {
                         "description": "Success"
@@ -241,17 +231,15 @@
                 "produces": [
                     "application/json"
                 ],
-                "parameters": [
-                    {
-                        "in": "body",
-                        "name": "body",
-                        "description": "Search request",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/referenceset"
-                        }
+                "parameters": [{
+                    "in": "body",
+                    "name": "body",
+                    "description": "Search request",
+                    "required": true,
+                    "schema": {
+                        "$ref": "#/definitions/referenceset"
                     }
-                ],
+                }],
                 "responses": {
                     "200": {
                         "description": "Success"
@@ -279,17 +267,15 @@
                 "produces": [
                     "application/json"
                 ],
-                "parameters": [
-                    {
-                        "in": "body",
-                        "name": "body",
-                        "description": "Search request",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/reference"
-                        }
+                "parameters": [{
+                    "in": "body",
+                    "name": "body",
+                    "description": "Search request",
+                    "required": true,
+                    "schema": {
+                        "$ref": "#/definitions/reference"
                     }
-                ],
+                }],
                 "responses": {
                     "200": {
                         "description": "Success"
@@ -317,17 +303,15 @@
                 "produces": [
                     "application/json"
                 ],
-                "parameters": [
-                    {
-                        "in": "body",
-                        "name": "body",
-                        "description": "Search request",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/variantset"
-                        }
+                "parameters": [{
+                    "in": "body",
+                    "name": "body",
+                    "description": "Search request",
+                    "required": true,
+                    "schema": {
+                        "$ref": "#/definitions/variantset"
                     }
-                ],
+                }],
                 "responses": {
                     "200": {
                         "description": "Success"
@@ -361,15 +345,13 @@
                     }
                 }
             },
-            "parameters": [
-                {
-                    "name": "id",
-                    "in": "path",
-                    "description": "ID of the variant",
-                    "required": true,
-                    "type": "string"
-                }
-            ]
+            "parameters": [{
+                "name": "id",
+                "in": "path",
+                "description": "ID of the variant",
+                "required": true,
+                "type": "string"
+            }]
         },
         "/variantsets/{id}": {
             "get": {
@@ -391,15 +373,13 @@
                     }
                 }
             },
-            "parameters": [
-                {
-                    "name": "id",
-                    "in": "path",
-                    "description": "ID of the variantset",
-                    "required": true,
-                    "type": "string"
-                }
-            ]
+            "parameters": [{
+                "name": "id",
+                "in": "path",
+                "description": "ID of the variantset",
+                "required": true,
+                "type": "string"
+            }]
         },
         "/readgroupsets/{id}": {
             "get": {
@@ -421,15 +401,13 @@
                     }
                 }
             },
-            "parameters": [
-                {
-                    "name": "id",
-                    "in": "path",
-                    "description": "ID of the readgroupset",
-                    "required": true,
-                    "type": "string"
-                }
-            ]
+            "parameters": [{
+                "name": "id",
+                "in": "path",
+                "description": "ID of the readgroupset",
+                "required": true,
+                "type": "string"
+            }]
         },
         "/readgroups/{id}": {
             "get": {
@@ -451,15 +429,13 @@
                     }
                 }
             },
-            "parameters": [
-                {
-                    "name": "id",
-                    "in": "path",
-                    "description": "ID of the readgroup",
-                    "required": true,
-                    "type": "string"
-                }
-            ]
+            "parameters": [{
+                "name": "id",
+                "in": "path",
+                "description": "ID of the readgroup",
+                "required": true,
+                "type": "string"
+            }]
         },
         "/callsets/{id}": {
             "get": {
@@ -481,15 +457,13 @@
                     }
                 }
             },
-            "parameters": [
-                {
-                    "name": "id",
-                    "in": "path",
-                    "description": "ID of the callset",
-                    "required": true,
-                    "type": "string"
-                }
-            ]
+            "parameters": [{
+                "name": "id",
+                "in": "path",
+                "description": "ID of the callset",
+                "required": true,
+                "type": "string"
+            }]
         },
         "/datasets/{id}": {
             "get": {
@@ -511,15 +485,13 @@
                     }
                 }
             },
-            "parameters": [
-                {
-                    "name": "id",
-                    "in": "path",
-                    "description": "ID of the dataset",
-                    "required": true,
-                    "type": "string"
-                }
-            ]
+            "parameters": [{
+                "name": "id",
+                "in": "path",
+                "description": "ID of the dataset",
+                "required": true,
+                "type": "string"
+            }]
         },
         "/variantannotationsets/{id}": {
             "get": {
@@ -541,15 +513,13 @@
                     }
                 }
             },
-            "parameters": [
-                {
-                    "name": "id",
-                    "in": "path",
-                    "description": "ID of the variant annotation set",
-                    "required": true,
-                    "type": "string"
-                }
-            ]
+            "parameters": [{
+                "name": "id",
+                "in": "path",
+                "description": "ID of the variant annotation set",
+                "required": true,
+                "type": "string"
+            }]
         },
         "/variants/search": {
             "post": {
@@ -565,17 +535,15 @@
                 "produces": [
                     "application/json"
                 ],
-                "parameters": [
-                    {
-                        "in": "body",
-                        "name": "body",
-                        "description": "Search request",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/variant"
-                        }
+                "parameters": [{
+                    "in": "body",
+                    "name": "body",
+                    "description": "Search request",
+                    "required": true,
+                    "schema": {
+                        "$ref": "#/definitions/variant"
                     }
-                ],
+                }],
                 "responses": {
                     "200": {
                         "description": "Success"
@@ -603,17 +571,15 @@
                 "produces": [
                     "application/json"
                 ],
-                "parameters": [
-                    {
-                        "in": "body",
-                        "name": "body",
-                        "description": "Search request",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/variantannotationset"
-                        }
+                "parameters": [{
+                    "in": "body",
+                    "name": "body",
+                    "description": "Search request",
+                    "required": true,
+                    "schema": {
+                        "$ref": "#/definitions/variantannotationset"
                     }
-                ],
+                }],
                 "responses": {
                     "200": {
                         "description": "Success"
@@ -641,17 +607,15 @@
                 "produces": [
                     "application/json"
                 ],
-                "parameters": [
-                    {
-                        "in": "body",
-                        "name": "body",
-                        "description": "Search request",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/variantannotations"
-                        }
+                "parameters": [{
+                    "in": "body",
+                    "name": "body",
+                    "description": "Search request",
+                    "required": true,
+                    "schema": {
+                        "$ref": "#/definitions/variantannotations"
                     }
-                ],
+                }],
                 "responses": {
                     "200": {
                         "description": "Success"
@@ -679,17 +643,15 @@
                 "produces": [
                     "application/json"
                 ],
-                "parameters": [
-                    {
-                        "in": "body",
-                        "name": "body",
-                        "description": "Search request",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/datasets"
-                        }
+                "parameters": [{
+                    "in": "body",
+                    "name": "body",
+                    "description": "Search request",
+                    "required": true,
+                    "schema": {
+                        "$ref": "#/definitions/datasets"
                     }
-                ],
+                }],
                 "responses": {
                     "200": {
                         "description": "Success"
@@ -717,17 +679,15 @@
                 "produces": [
                     "application/json"
                 ],
-                "parameters": [
-                    {
-                        "in": "body",
-                        "name": "body",
-                        "description": "Search request",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/genotypephenotypes"
-                        }
+                "parameters": [{
+                    "in": "body",
+                    "name": "body",
+                    "description": "Search request",
+                    "required": true,
+                    "schema": {
+                        "$ref": "#/definitions/genotypephenotypes"
                     }
-                ],
+                }],
                 "responses": {
                     "200": {
                         "description": "Success"
@@ -755,17 +715,15 @@
                 "produces": [
                     "application/json"
                 ],
-                "parameters": [
-                    {
-                        "in": "body",
-                        "name": "body",
-                        "description": "Search request",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/phenotypeassociationsets"
-                        }
+                "parameters": [{
+                    "in": "body",
+                    "name": "body",
+                    "description": "Search request",
+                    "required": true,
+                    "schema": {
+                        "$ref": "#/definitions/phenotypeassociationsets"
                     }
-                ],
+                }],
                 "responses": {
                     "200": {
                         "description": "Success"
