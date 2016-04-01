@@ -14,7 +14,7 @@ import urlparse
 import functools
 
 import flask
-import flask.ext.cors as cors
+from flask.ext.cors import CORS
 import humanize
 import werkzeug
 import oic
@@ -179,7 +179,7 @@ def configure(configFile=None, baseConfig="ProductionConfig",
     datamodel.fileHandleCache.setMaxCacheSize(
         app.config["FILE_HANDLE_CACHE_MAX_SIZE"])
     # Setup CORS
-    cors.CORS(app, allow_headers='Content-Type')
+    CORS(app, allow_headers='Content-Type')
     app.serverStatus = ServerStatus()
     # Allocate the backend
     # We use URLs to specify the backend. Currently we have file:// URLs (or
