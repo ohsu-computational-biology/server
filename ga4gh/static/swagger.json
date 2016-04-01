@@ -592,7 +592,7 @@
                     }
                 }
             }
-        }
+        },
         "/variantannotations/search": {
             "post": {
                 "tags": [
@@ -736,7 +736,7 @@
                     }
                 }
             }
-        },
+        }
     },
     "definitions": {
         "Variant": {
