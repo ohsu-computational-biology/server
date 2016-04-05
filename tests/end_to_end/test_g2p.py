@@ -69,7 +69,6 @@ class TestG2P(unittest.TestCase):
         # simple string regexp
         request = protocol.SearchGenotypePhenotypeRequest()
         request.phenotypeAssociationSetId = self.getPhenotypeAssociationSetId()
-
         request.feature = "KIT *wild"
         response = self.sendPostRequest('/genotypephenotype/search', request)
         self.assertEqual(200, response.status_code)
@@ -222,16 +221,8 @@ class TestG2P(unittest.TestCase):
         request = protocol.SearchGenotypePhenotypeRequest()
         request.phenotypeAssociationSetId = self.getPhenotypeAssociationSetId()
         request.feature = "KIT *wild"
-        print(request.toJsonString())
         response = self.sendPostRequest('/genotypephenotype/search', request)
         self.assertEqual(200, response.status_code)
-
-        import json
-        print json.dumps(json.loads(response.data),
-                         sort_keys=True,
-                         indent=2,
-                         separators=(',', ': '))
-
         response = protocol.SearchGenotypePhenotypeResponse().fromJsonString(
             response.data)
         self.assertTrue(hasattr(response.associations[0],
