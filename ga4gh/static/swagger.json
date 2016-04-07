@@ -73,13 +73,13 @@
                      }
                  }
              },
-             "parameters": {
+             "parameters": [{
                  "name": "id",
                  "in": "path",
                  "description": "ID of the reference set",
                  "required": true,
                  "type": "string"
-             }
+             }]
          },
          "/references/{id}/bases": {
              "get": {
@@ -101,13 +101,13 @@
                      }
                  }
              },
-             "parameters": {
+             "parameters": [{
                  "name": "id",
                  "in": "path",
                  "description": "ID of the reference bases",
                  "required": true,
                  "type": "string"
-             }
+             }]
          },
          "/callsets/search": {
              "post": {
