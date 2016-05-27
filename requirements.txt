@@ -29,7 +29,7 @@ future==0.15.2
 pyjwkest==1.0.1
 
 ### This section is for the actual libraries ###
-# these libraries are imported in code that can be reached via 
+# these libraries are imported in code that can be reached via
 # an executable that we ship
 
 # Flask must come after all other requirements that have "flask" as a
@@ -46,3 +46,6 @@ lxml==3.4.4
 
 # We need sphinx-argparse to build on readthedocs.
 sphinx-argparse==0.1.15
+
+# G2P uses a ttl backend
+RDFLib==4.2.1

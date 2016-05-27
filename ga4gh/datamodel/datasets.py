@@ -11,6 +11,7 @@ import ga4gh.datamodel.sequenceAnnotations as sequenceAnnotations
 import ga4gh.datamodel.variants as variants
 import ga4gh.exceptions as exceptions
 import ga4gh.protocol as protocol
+import ga4gh.datamodel.genotype_phenotype as g2p
 
 
 class Dataset(datamodel.DatamodelObject):
@@ -233,3 +234,56 @@ class SimulatedDataset(Dataset):
                 self, localId, seed)
             featureSet.setReferenceSet(referenceSet)
             self.addFeatureSet(featureSet)
+
+class FileSystemDataset(Dataset):
+    """
+    A dataset based on the file system
+    """
+    variantsDirName = "variants"
+    readsDirName = "reads"
+    phenotypeAssociationSetsDirName = "phenotypes"
+
+    def __init__(self, localId, dataDir, dataRepository):
+        super(FileSystemDataset, self).__init__(localId)
+        self._dataDir = dataDir
+        self._setMetadata()
+
+        phenotypeAssociationSetDir = \
+            os.path.join(dataDir, self.phenotypeAssociationSetsDirName)
+        for localId in os.listdir(phenotypeAssociationSetDir):
+            relativePath = os.path.join(phenotypeAssociationSetDir, localId)
+            if os.path.isdir(relativePath):
+                # TODO pass in datarepo because for connecting
+                # ontology sources
+                phenotypeAssociationSet = g2p.PhenotypeAssociationSet(
+                    self, localId, relativePath)
+                self.addPhenotypeAssociationSet(phenotypeAssociationSet)
+
+        # Variants
+        variantSetDir = os.path.join(dataDir, self.variantsDirName)
+        for localId in os.listdir(variantSetDir):
+            relativePath = os.path.join(variantSetDir, localId)
+            if os.path.isdir(relativePath):
+                variantSet = variants.HtslibVariantSet(
+                    self, localId, relativePath, dataRepository)
+                self.addVariantSet(variantSet)
+        # Reads
+        readGroupSetDir = os.path.join(dataDir, self.readsDirName)
+        for filename in os.listdir(readGroupSetDir):
+            if fnmatch.fnmatch(filename, '*.bam'):
+                localId, _ = os.path.splitext(filename)
+                bamPath = os.path.join(readGroupSetDir, filename)
+                readGroupSet = reads.HtslibReadGroupSet(
+                    self, localId, bamPath, dataRepository)
+                self.addReadGroupSet(readGroupSet)
+
+    def _setMetadata(self):
+        metadataFileName = '{}.json'.format(self._dataDir)
+        if os.path.isfile(metadataFileName):
+            with open(metadataFileName) as metadataFile:
+                metadata = json.load(metadataFile)
+                try:
+                    self._description = metadata['description']
+                except KeyError as err:
+                    raise exceptions.MissingDatasetMetadataException(
+                        metadataFileName, str(err))
