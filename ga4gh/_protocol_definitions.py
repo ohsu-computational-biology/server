@@ -3316,13 +3316,14 @@ class SearchFeaturesRequest(SearchRequest):
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
 "SearchFeaturesRequest", "fields": [{"doc": "", "type": ["null",
 "string"], "name": "featureSetId"}, {"doc": "", "type": ["null",
-"string"], "name": "parentId"}, {"doc": "", "type": "string", "name":
-"referenceName"}, {"doc": "", "type": "long", "name": "start"},
-{"doc": "", "type": "long", "name": "end"}, {"default": [], "doc": "",
-"type": {"items": "string", "type": "array"}, "name": "featureTypes"},
-{"default": null, "doc": "", "type": ["null", "int"], "name":
-"pageSize"}, {"default": null, "doc": "", "type": ["null", "string"],
-"name": "pageToken"}], "doc": ""}
+"string"], "name": "parentId"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "name"}, {"doc": "", "type": "string",
+"name": "referenceName"}, {"doc": "", "type": "long", "name":
+"start"}, {"doc": "", "type": "long", "name": "end"}, {"default": [],
+"doc": "", "type": {"items": "string", "type": "array"}, "name":
+"featureTypes"}, {"default": null, "doc": "", "type": ["null", "int"],
+"name": "pageSize"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "pageToken"}], "doc": ""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([
@@ -3345,7 +3346,7 @@ class SearchFeaturesRequest(SearchRequest):
         return embeddedTypes[fieldName]
 
     __slots__ = [
-        'end', 'featureSetId', 'featureTypes', 'pageSize',
+        'end', 'featureSetId', 'featureTypes', 'name', 'pageSize',
         'pageToken', 'parentId', 'referenceName', 'start'
     ]
 
@@ -3367,6 +3368,11 @@ class SearchFeaturesRequest(SearchRequest):
         """
         If specified, this query matches only annotations whose
         featureType     matches one of the provided ontology terms.
+        """
+        self.name = kwargs.get(
+            'name', None)
+        """
+        The name of the Feature e.g 'KIT'.
         """
         self.pageSize = kwargs.get(
             'pageSize', None)
