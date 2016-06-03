@@ -565,8 +565,10 @@ def searchDatasets():
 
 @DisplayedRoute('/featuresets/search', postMethod=True)
 def searchFeatureSets():
+    print('frontend ...... /featuresets/search')
     return handleFlaskPostRequest(
         flask.request, app.backend.runSearchFeatureSets)
+
 
 
 @DisplayedRoute('/features/search', postMethod=True)
@@ -574,7 +576,17 @@ def searchFeatures():
     return handleFlaskPostRequest(
         flask.request, app.backend.runSearchFeatures)
 
+@DisplayedRoute('/genotypephenotype/search', postMethod=True)
+def searchGenotypePhenotype():
+    return handleFlaskPostRequest(
+        flask.request, app.backend.runSearchGenotypePhenotype)
 
+
+@DisplayedRoute('/phenotypeassociationsets/search', postMethod=True)
+def searchPhenotypeAssociationSets():
+    return handleFlaskPostRequest(
+        flask.request, app.backend.runSearchPhenotypeAssociationSets)
+        
 @DisplayedRoute(
     '/variantsets/<no(search):id>',
     pathDisplay='/variantsets/<id>')
