@@ -230,7 +230,22 @@ class TestG2P(unittest.TestCase):
         self.assertEqual(1, len(response.associations[0].features))
 
     def testFindFeatureExternalIdentifier(self):
-        request = protocol.SearchFeaturesRequest()
+        request = protocol.SearchGenotypePhenotypeRequest()
+        request.phenotypeAssociationSetId = self.getPhenotypeAssociationSetId()
+        request.feature = protocol.ExternalIdentifierQuery()
+        id = protocol.ExternalIdentifier()
+        id.database = "http://ohsu.edu/cgd/"
+        id.identifier = "055b872c"
+        id.version = "*"
+        request.feature.ids = [id]
+        response = self.sendPostRequest('/genotypephenotype/search', request)
+        self.assertEqual(200, response.status_code)
+        response = protocol.SearchGenotypePhenotypeResponse().fromJsonString(
+            response.data)
+        self.assertEqual(1, len(response.associations[0].features))
+
+    def testFindPhenotypeExternalIdentifier(self):
+        request = protocol.SearchGenotypePhenotypeRequest()
         request.phenotypeAssociationSetId = self.getPhenotypeAssociationSetId()
         # setup the external identifiers query
         idquery = protocol.ExternalIdentifierQuery()
