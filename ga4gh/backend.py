@@ -974,8 +974,36 @@ class Backend(object):
             protocol.SearchFeaturesResponse,
             self.featuresGenerator)
 
-    def runSearchPhenotypes(self, request):
+    def runSearchGenotypePhenotype(self, request):
+            return self.runSearchRequest(
+                request, protocol.SearchGenotypePhenotypeRequest,
+                protocol.SearchGenotypePhenotypeResponse,
+                self.genotypePhenotypeGenerator)
+
+    def runSearchPhenotypeAssociationSets(self, request):
         return self.runSearchRequest(
-            request, protocol.SearchPhenotypesRequest,
-            protocol.SearchPhenotypesResponse,
-            self.phenotypesGenerator)
+            request, protocol.SearchPhenotypeAssociationSetsRequest,
+            protocol.SearchPhenotypeAssociationSetsResponse,
+            self.phenotypeAssociationSetsGenerator)
+
+    def genotypePhenotypeGenerator(self, request):
+        # TODO make paging work using SPARQL?
+        if (request.evidence is None and
+                request.phenotype is None and
+                request.feature is None):
+            msg = "Error:One of evidence,phenotype or feature must be non-null"
+            raise exceptions.BadRequestException(msg)
+        # determine offset for paging
+        if request.pageToken is not None:
+            offset, = _parsePageToken(request.pageToken, 1)
+        else:
+            offset = 0
+        compoundId = datamodel.PhenotypeAssociationSetCompoundId.parse(
+            request.phenotypeAssociationSetId)
+        dataset = self.getDataRepository().getDataset(compoundId.datasetId)
+        phenotypeAssociationSet = dataset.getPhenotypeAssociationSet(
+            compoundId.phenotypeAssociationSetId)
+        annotationList = phenotypeAssociationSet.getAssociations(
+            request.feature, request.evidence, request.phenotype,
+            request.pageSize, offset)
+        return self._protocolListGenerator(request, annotationList)

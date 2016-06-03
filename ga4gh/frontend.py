@@ -569,6 +569,7 @@ def searchPhenotypeAssociationSets():
 
 @DisplayedRoute('/featuresets/search', postMethod=True)
 def searchFeatureSets():
+    print('frontend ...... /featuresets/search')
     return handleFlaskPostRequest(
         flask.request, app.backend.runSearchFeatureSets)
 
