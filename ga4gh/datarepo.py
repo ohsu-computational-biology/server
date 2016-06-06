@@ -16,6 +16,7 @@ import ga4gh.datamodel.reads as reads
 import ga4gh.datamodel.references as references
 import ga4gh.datamodel.variants as variants
 import ga4gh.datamodel.sequenceAnnotations as sequenceAnnotations
+import ga4gh.datamodel.genotype_phenotype as g2p
 import ga4gh.exceptions as exceptions
 
 MODE_READ = 'r'
@@ -1036,6 +1037,48 @@ class SqlDataRepository(AbstractDataRepository):
             featureSet.populateFromRow(row)
             assert featureSet.getId() == row[b'id']
             dataset.addFeatureSet(featureSet)
+
+    def _createPhenotypeAssociationSetTable(self, cursor):
+        sql = """
+            CREATE TABLE PhenotypeAssociationSet (
+                id TEXT NOT NULL PRIMARY KEY,
+                name TEXT,
+                datasetId TEXT NOT NULL,
+                info TEXT,
+                UNIQUE (datasetId, name),
+                FOREIGN KEY(datasetId) REFERENCES Dataset(id)
+                    ON DELETE CASCADE
+            );
+        """
+        cursor.execute(sql)
+
+    def insertPhenotypeAssociationSet(self, phenotypeAssociationSet):
+        """
+        Inserts the specified individual into this repository.
+        """
+        # TODO add support for info and sourceUri fields.
+        sql = """
+            INSERT INTO PhenotypeAssociationSet (
+                id, name, datasetId, info)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """
+        cursor = self._dbConnection.cursor()
+        cursor.execute(sql, (
+            phenotypeAssociationSet.getId(),
+            phenotypeAssociationSet.getLocalId(),
+            phenotypeAssociationSet.getParentContainer().getId(),
+            json.dumps(phenotypeAssociationSet.getInfo())))
+
+    def _readPhenotypeAssociationSetTable(self, cursor):
+        cursor.row_factory = sqlite3.Row
+        cursor.execute("SELECT * FROM PhenotypeAssociationSet;")
+        for row in cursor:
+            dataset = self.getDataset(row[b'datasetId'])
+            phenotypeAssociationSet = g2p.PhenotypeAssociationSet(
+                dataset, row[b'name'])
+            phenotypeAssociationSet.populateFromRow(row)
+            assert phenotypeAssociationSet.getId() == row[b'id']
+            dataset.addPhenotypeAssociationSet(phenotypeAssociationSet)
 
     def initialise(self):
         """
