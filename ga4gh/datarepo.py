@@ -16,6 +16,7 @@ import ga4gh.datamodel.reads as reads
 import ga4gh.datamodel.references as references
 import ga4gh.datamodel.variants as variants
 import ga4gh.datamodel.sequenceAnnotations as sequenceAnnotations
+import ga4gh.datamodel.genotype_phenotype as g2p
 import ga4gh.exceptions as exceptions
 
 MODE_READ = 'r'
@@ -231,6 +232,14 @@ class AbstractDataRepository(object):
                     featureSet.getOntology().getName(),
                     featureSet.getId(),
                     sep="\t")
+            print("\tPhenotypeAssociationSets:")
+            for phenotypeAssociationSet in \
+                    dataset.getPhenotypeAssociationSets():
+                print(
+                    "\t", phenotypeAssociationSet.getLocalId(),
+                    phenotypeAssociationSet.getParentContainer().getId(),
+                    sep="\t")
+                # TODO - gabrielle please improve this listing
 
 
 class EmptyDataRepository(AbstractDataRepository):
@@ -445,6 +454,15 @@ class SqlDataRepository(AbstractDataRepository):
                     print(
                         "\t\t\tRead", i, "annotations from reference",
                         referenceName)
+            for phenotypeAssociationSet \
+                    in dataset.getPhenotypeAssociationSets():
+                print("\t\tVerifying PhenotypeAssociationSet")
+                print(
+                    "\t\t\t", phenotypeAssociationSet.getLocalId(),
+                    phenotypeAssociationSet.getParentContainer().getId(),
+                    sep="\t")
+                # TODO - gabrielle please improve this verification,
+                #        print out number of tuples in graph
 
     def _safeConnect(self):
         try:
@@ -1037,6 +1055,47 @@ class SqlDataRepository(AbstractDataRepository):
             assert featureSet.getId() == row[b'id']
             dataset.addFeatureSet(featureSet)
 
+    def _createPhenotypeAssociationSetTable(self, cursor):
+        sql = """
+            CREATE TABLE PhenotypeAssociationSet (
+                id TEXT NOT NULL PRIMARY KEY,
+                name TEXT,
+                datasetId TEXT NOT NULL,
+                dataUrl TEXT NOT NULL,
+                UNIQUE (datasetId, name),
+                FOREIGN KEY(datasetId) REFERENCES Dataset(id)
+                    ON DELETE CASCADE
+            );
+        """
+        cursor.execute(sql)
+
+    def insertPhenotypeAssociationSet(self, phenotypeAssociationSet):
+        """
+        Inserts the specified individual into this repository.
+        """
+        # TODO add support for info and sourceUri fields.
+        sql = """
+            INSERT INTO PhenotypeAssociationSet (
+                id, name, datasetId,dataUrl )
+            VALUES (?, ?, ?, ?)
+        """
+        cursor = self._dbConnection.cursor()
+        cursor.execute(sql, (
+            phenotypeAssociationSet.getId(),
+            phenotypeAssociationSet.getLocalId(),
+            phenotypeAssociationSet.getParentContainer().getId(),
+            phenotypeAssociationSet._dataUrl
+            ))
+
+    def _readPhenotypeAssociationSetTable(self, cursor):
+        cursor.row_factory = sqlite3.Row
+        cursor.execute("SELECT * FROM PhenotypeAssociationSet;")
+        for row in cursor:
+            dataset = self.getDataset(row[b'datasetId'])
+            phenotypeAssociationSet = g2p.PhenotypeAssociationSet(
+                dataset, row[b'name'], row[b'dataUrl'])
+            dataset.addPhenotypeAssociationSet(phenotypeAssociationSet)
+
     def initialise(self):
         """
         Initialise this data repostitory, creating any necessary directories
@@ -1055,6 +1114,7 @@ class SqlDataRepository(AbstractDataRepository):
         self._createVariantSetTable(cursor)
         self._createVariantAnnotationSetTable(cursor)
         self._createFeatureSetTable(cursor)
+        self._createPhenotypeAssociationSetTable(cursor)
 
     def exists(self):
         """
@@ -1097,3 +1157,4 @@ class SqlDataRepository(AbstractDataRepository):
             self._readCallSetTable(cursor)
             self._readVariantAnnotationSetTable(cursor)
             self._readFeatureSetTable(cursor)
+            self._readPhenotypeAssociationSetTable(cursor)
