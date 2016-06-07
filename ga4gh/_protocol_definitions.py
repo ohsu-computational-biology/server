@@ -3569,31 +3569,33 @@ class SearchGenotypesRequest(SearchRequest):
 {"namespace": "org.ga4gh.methods", "type": "record", "name":
 "SearchGenotypesRequest", "fields": [{"doc": "", "type": "string",
 "name": "phenotypeAssociationSetId"}, {"doc": "", "type": ["null",
-"string"], "name": "name"}, {"type": ["null", "string"], "name":
-"referenceName"}, {"type": ["null", "long"], "name": "start"},
-{"type": ["null", "long"], "name": "end"}, {"type": ["null",
-{"symbols": ["NEG_STRAND", "POS_STRAND"], "namespace":
-"org.ga4gh.models", "type": "enum", "name": "Strand", "doc": ""}],
-"name": "strand"}, {"type": ["null", {"namespace": "org.ga4gh.models",
-"type": "record", "name": "OntologyTerm", "fields": [{"doc": "",
-"type": "string", "name": "id"}, {"default": null, "doc": "", "type":
-["null", "string"], "name": "term"}, {"default": null, "doc": "",
-"type": ["null", "string"], "name": "sourceName"}, {"default": null,
-"doc": "", "type": ["null", "string"], "name": "sourceVersion"}],
-"doc": ""}], "name": "featureType"}, {"default": null, "type":
-["null", {"items": {"namespace": "org.ga4gh.models", "type": "record",
-"name": "ExternalIdentifier", "fields": [{"doc": "", "type": "string",
-"name": "database"}, {"doc": "", "type": "string", "name":
-"identifier"}, {"doc": "", "type": "string", "name": "version"}],
-"doc": ""}, "type": "array"}], "name": "externalIdentifiers"},
-{"default": null, "doc": "", "type": ["null", "int"], "name":
-"pageSize"}, {"default": null, "doc": "", "type": ["null", "string"],
-"name": "pageToken"}], "doc": ""}
+"string"], "name": "id"}, {"type": ["null", "string"], "name":
+"name"}, {"type": ["null", "string"], "name": "referenceName"},
+{"type": ["null", "long"], "name": "start"}, {"type": ["null",
+"long"], "name": "end"}, {"type": ["null", {"symbols": ["NEG_STRAND",
+"POS_STRAND"], "namespace": "org.ga4gh.models", "type": "enum",
+"name": "Strand", "doc": ""}], "name": "strand"}, {"type": ["null",
+{"namespace": "org.ga4gh.models", "type": "record", "name":
+"OntologyTerm", "fields": [{"doc": "", "type": "string", "name":
+"id"}, {"default": null, "doc": "", "type": ["null", "string"],
+"name": "term"}, {"default": null, "doc": "", "type": ["null",
+"string"], "name": "sourceName"}, {"default": null, "doc": "", "type":
+["null", "string"], "name": "sourceVersion"}], "doc": ""}], "name":
+"featureType"}, {"default": null, "type": ["null", {"items":
+{"namespace": "org.ga4gh.models", "type": "record", "name":
+"ExternalIdentifier", "fields": [{"doc": "", "type": "string", "name":
+"database"}, {"doc": "", "type": "string", "name": "identifier"},
+{"doc": "", "type": "string", "name": "version"}], "doc": ""}, "type":
+"array"}], "name": "externalIdentifiers"}, {"default": null, "doc":
+"", "type": ["null", "int"], "name": "pageSize"}, {"default": null,
+"doc": "", "type": ["null", "string"], "name": "pageToken"}], "doc":
+""}
 """
     schema = avro.schema.parse(_schemaSource)
     requiredFields = set([
         "end",
         "featureType",
+        "id",
         "name",
         "phenotypeAssociationSetId",
         "referenceName",
@@ -3617,7 +3619,7 @@ class SearchGenotypesRequest(SearchRequest):
         return embeddedTypes[fieldName]
 
     __slots__ = [
-        'end', 'externalIdentifiers', 'featureType', 'name',
+        'end', 'externalIdentifiers', 'featureType', 'id', 'name',
         'pageSize', 'pageToken', 'phenotypeAssociationSetId',
         'referenceName', 'start', 'strand'
     ]
@@ -3629,13 +3631,15 @@ class SearchGenotypesRequest(SearchRequest):
             'externalIdentifiers', None)
         self.featureType = kwargs.get(
             'featureType', None)
-        self.name = kwargs.get(
-            'name', None)
+        self.id = kwargs.get(
+            'id', None)
         """
         This is similar to FeatureQuery  '/features/search' served by
         Sequence Annotations   But is intended to be served from the
         G2P knowledgebase
         """
+        self.name = kwargs.get(
+            'name', None)
         self.pageSize = kwargs.get(
             'pageSize', None)
         """
