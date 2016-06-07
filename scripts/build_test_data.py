@@ -52,6 +52,10 @@ def main():
             "add-featureset", repoFile, datasetName, dataFile, "-R NCBI37",
             "-O", sequenceOntologyName)
 
+    pattern = os.path.join(prefix, "datasets/dataset1/phenotypes", "*")
+    for dataFile in glob.glob(pattern):
+        run("add-g2p", repoFile, dataFile, datasetName)
+
 
 if __name__ == "__main__":
     main()
