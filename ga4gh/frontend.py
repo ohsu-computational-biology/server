@@ -580,7 +580,7 @@ def searchFeatures():
     return handleFlaskPostRequest(
         flask.request, app.backend.runSearchFeatures)
 
-        
+
 @DisplayedRoute(
     '/variantsets/<no(search):id>',
     pathDisplay='/variantsets/<id>')
@@ -642,8 +642,8 @@ def getFeature(id):
     '/datasets/<no(search):datasetId>/features/search',
     pathDisplay='/datasets/<datasetId>/features/search', postMethod=True)
 def getFeaturesSearch(datasetId):
-    return handleFlaskGetRequest(
-        datasetId, flask.request, app.backend.runSearchFeatures)
+    return handleFlaskPostRequest(
+        flask.request, app.backend.runSearchFeatures)
 
 
 @DisplayedRoute(
@@ -651,10 +651,8 @@ def getFeaturesSearch(datasetId):
     pathDisplay='/associations/<phenotypeAssociationSetId>/genotypes/search',
     postMethod=True)
 def getGenotypesSearch(phenotypeAssociationSetId):
-    return handleFlaskGetRequest(
-        phenotypeAssociationSetId,
-        flask.request,
-        app.backend.runSearchGenotypes)
+    return handleFlaskPostRequest(
+        flask.request, app.backend.runSearchGenotypes)
 
 
 @DisplayedRoute(
@@ -662,10 +660,8 @@ def getGenotypesSearch(phenotypeAssociationSetId):
     pathDisplay='/associations/<phenotypeAssociationSetId>/phenotypes/search',
     postMethod=True)
 def getPhenotypesSearch(phenotypeAssociationSetId):
-    print(flask.request.__dict__)
     return handleFlaskPostRequest(
-        flask.request,
-        app.backend.runSearchPhenotypes)
+        flask.request, app.backend.runSearchPhenotypes)
 
 
 @DisplayedRoute(
@@ -673,10 +669,8 @@ def getPhenotypesSearch(phenotypeAssociationSetId):
     pathDisplay='/associations/<pasId>/genotypephenotypes/search',
     postMethod=True)
 def getGenotypePhenotypesSearch(phenotypeAssociationSetId):
-    return handleFlaskGetRequest(
-        phenotypeAssociationSetId,
-        flask.request,
-        app.backend.runSearchGenotypePhenotypes)
+    return handleFlaskPostRequest(
+        flask.request, app.backend.runSearchGenotypePhenotypes)
 
 
 @app.route('/oauth2callback', methods=['GET'])
