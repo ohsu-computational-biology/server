@@ -140,14 +140,14 @@ class TestG2P(unittest.TestCase):
         request = protocol.SearchPhenotypesRequest()
         request.phenotypeAssociationSetId = self.getPhenotypeAssociationSetId()
         ontologyterm = protocol.OntologyTerm()
-        ontologyterm.id = "http://www.ebi.ac.uk/efo/EFO_0003767"
+        ontologyterm.id = "http://ohsu.edu/cgd/5c895709"
         request.type = ontologyterm
         postUrl = '/phenotypes/search'
         response = self.sendPostRequest(postUrl, request)
         self.assertEqual(200, response.status_code)
         response = protocol.SearchPhenotypesResponse() \
                            .fromJsonString(response.data)
-        self.assertGreater(0, response.phenotypes)
+        self.assertGreater(len(response.phenotypes), 0)
 
     @unittest.skip
     def testPhenotypeSearchQualifiers(self):
@@ -161,7 +161,7 @@ class TestG2P(unittest.TestCase):
         self.assertEqual(200, response.status_code)
         response = protocol.SearchPhenotypesResponse() \
                            .fromJsonString(response.data)
-        self.assertGreater(0, response.phenotypes)
+        self.assertGreater(len(response.phenotypes), 0)
 
     @unittest.skip
     def testPhenotypeSearchMultipleQualifiers(self):
@@ -178,7 +178,7 @@ class TestG2P(unittest.TestCase):
         self.assertEqual(200, response.status_code)
         response = protocol.SearchPhenotypesResponse() \
                            .fromJsonString(response.data)
-        self.assertGreater(0, response.phenotypes)
+        self.assertGreater(len(response.phenotypes), 0)
 
     def testPhenotypesSearchDescription(self):
         request = protocol.SearchPhenotypesRequest()
@@ -189,7 +189,7 @@ class TestG2P(unittest.TestCase):
         self.assertEqual(200, response.status_code)
         response = protocol.SearchPhenotypesResponse() \
                            .fromJsonString(response.data)
-        self.assertGreater(0, response.phenotypes)
+        self.assertGreater(len(response.phenotypes), 0)
 
     def testPhenotypesSearchDescriptionWildcard(self):
         request = protocol.SearchPhenotypesRequest()
@@ -200,7 +200,7 @@ class TestG2P(unittest.TestCase):
         self.assertEqual(200, response.status_code)
         response = protocol.SearchPhenotypesResponse() \
                            .fromJsonString(response.data)
-        self.assertGreater(0, response.phenotypes)
+        self.assertGreater(len(response.phenotypes), 0)
 
     def testPhenotypesSearchMultipleTerms(self):
         request = protocol.SearchPhenotypesRequest()
@@ -214,7 +214,7 @@ class TestG2P(unittest.TestCase):
         self.assertEqual(200, response.status_code)
         response = protocol.SearchPhenotypesResponse() \
                            .fromJsonString(response.data)
-        self.assertGreater(0, response.phenotypes)
+        self.assertGreater(len(response.phenotypes), 0)
 
     def testGenotypePhenotypeSearchFeature(self):
         """
