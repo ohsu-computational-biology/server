@@ -11,6 +11,7 @@
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix MonarchData: <http://data.monarchinitiative.org/ttl/> .
 @prefix MonarchArchive: <http://archive.monarchinitiative.org/ttl/> .
+@prefix dbSNP: <http://www.ncbi.nlm.nih.gov/SNP/> .
 
 
 MonarchData:cgd.ttl a owl:Ontology ;
@@ -482,4 +483,3 @@ MonarchData:cgd.ttl a owl:Ontology ;
             CGD:e901ee1e,
             CGD:f7303413 ;
         rdfs:subClassOf OBO:CHEBI_23888 .
-
