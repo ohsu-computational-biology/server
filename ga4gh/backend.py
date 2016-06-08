@@ -676,10 +676,10 @@ class Backend(object):
         phenotypeAssociationSet = dataset.getPhenotypeAssociationSet(
             compoundId.phenotypeAssociationSetId)
         annotationList = phenotypeAssociationSet.getAssociations(
-            None, None, request,
-            request.pageSize, offset)
+            request, request.pageSize, offset)
+        phenotypes = [annotation.phenotype for annotation in annotationList]
         return self._protocolListGenerator(request,
-                                           [annotationList[0].phenotype])
+                                           phenotypes)
 
     def genotypesGenerator(self, request):
         """
@@ -698,10 +698,29 @@ class Backend(object):
         phenotypeAssociationSet = dataset.getPhenotypeAssociationSet(
             compoundId.phenotypeAssociationSetId)
         annotationList = phenotypeAssociationSet.getAssociations(
-            request, None, None,
-            request.pageSize, offset)
+            request, request.pageSize, offset)
         return self._protocolListGenerator(request,
                                            [annotationList[0].features[0]])
+
+    def genotypesPhenotypesGenerator(self, request):
+        """
+        Returns a generator over the (phenotypes, nextPageToken) pairs
+        defined by the (JSON string) request
+        """
+        # TODO make paging work using SPARQL?
+        # determine offset for paging
+        if request.pageToken is not None:
+            offset, = _parsePageToken(request.pageToken, 1)
+        else:
+            offset = 0
+        compoundId = datamodel.PhenotypeAssociationSetCompoundId.parse(
+            request.phenotypeAssociationSetId)
+        dataset = self.getDataRepository().getDataset(compoundId.datasetId)
+        phenotypeAssociationSet = dataset.getPhenotypeAssociationSet(
+            compoundId.phenotypeAssociationSetId)
+        annotationList = phenotypeAssociationSet.getAssociations(
+            request, request.pageSize, offset)
+        return self._protocolListGenerator(request, annotationList)
 
     def callSetsGenerator(self, request):
         """
@@ -1039,11 +1058,11 @@ class Backend(object):
             protocol.SearchFeaturesResponse,
             self.featuresGenerator)
 
-    def runSearchGenotypePhenotype(self, request):
+    def runSearchGenotypePhenotypes(self, request):
         return self.runSearchRequest(
             request, protocol.SearchGenotypePhenotypeRequest,
             protocol.SearchGenotypePhenotypeResponse,
-            self.phenotypesGenerator)
+            self.genotypesPhenotypesGenerator)
 
     def runSearchPhenotypes(self, request):
         return self.runSearchRequest(
@@ -1081,6 +1100,5 @@ class Backend(object):
         phenotypeAssociationSet = dataset.getPhenotypeAssociationSet(
             compoundId.phenotypeAssociationSetId)
         annotationList = phenotypeAssociationSet.getAssociations(
-            request.feature, request.evidence, request.phenotype,
-            request.pageSize, offset)
+            request, request.pageSize, offset)
         return self._objectListGenerator(request, annotationList)
