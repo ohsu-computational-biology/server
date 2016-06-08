@@ -666,12 +666,10 @@ def getPhenotypesSearch():
 
 
 @DisplayedRoute(
-    '/associations/<no(search):pasId>/genotypephenotypes/search',
-    pathDisplay='/associations/<pasId>/genotypephenotypes/search',
+    '/genotypephenotypes/search',
     postMethod=True)
-def getGenotypePhenotypesSearch(phenotypeAssociationSetId):
-    return handleFlaskGetRequest(
-        phenotypeAssociationSetId,
+def getGenotypePhenotypesSearch():
+    return handleFlaskPostRequest(
         flask.request,
         app.backend.runSearchGenotypePhenotypes)
 
