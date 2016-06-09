@@ -253,7 +253,6 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
                 elements.append('?{} = <{}> '.format(
                     element_type, self._toNamespaceURL(term['term'])))
         elementClause = "({})".format(" || ".join(elements))
-        print("\n\nOntologyTerms: ", elementClause)
         return elementClause
 
     def _formatIds(self, element, element_type):

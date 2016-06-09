@@ -234,17 +234,16 @@ class TestG2P(unittest.TestCase):
                            .fromJsonString(response.data)
         self.assertGreater(len(response.phenotypes), 0)
 
-    @unittest.skip
     def testPhenotypesSearchDescriptionWildcard(self):
         request = protocol.SearchPhenotypesRequest()
         request.phenotypeAssociationSetId = self.getPhenotypeAssociationSetId()
-        request.description = "*sensitivity*"
+        request.description = ".*sensitivity.*"
         postUrl = '/phenotypes/search'
         response = self.sendPostRequest(postUrl, request)
         self.assertEqual(200, response.status_code)
         response = protocol.SearchPhenotypesResponse() \
                            .fromJsonString(response.data)
-        self.assertGreater(len(response.phenotypes), 0)
+        self.assertEquals(7, len(response.phenotypes))
 
     @unittest.skip
     def testPhenotypesSearchMultipleTerms(self):
