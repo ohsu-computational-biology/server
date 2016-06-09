@@ -677,8 +677,9 @@ class Backend(object):
             compoundId.phenotypeAssociationSetId)
         annotationList = phenotypeAssociationSet.getAssociations(
             request, request.pageSize, offset)
+        phenotypes = [annotation.phenotype for annotation in annotationList]
         return self._protocolListGenerator(request,
-                                           [annotationList[0].phenotype])
+                                           phenotypes)
 
     def genotypesGenerator(self, request):
         """

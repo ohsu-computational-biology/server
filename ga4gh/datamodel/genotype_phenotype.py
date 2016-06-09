@@ -234,6 +234,25 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
             elementClause = "({})".format(" || ".join(elements))
         return elementClause
 
+    def _formatOntologyTermObject(self, terms, element_type):
+        """
+        Formats the ontology term object for query
+        """
+        elementClause = None
+        if not isinstance(terms, list):
+            terms = [terms]
+        elements = []
+        for term in terms:
+            if term.id:
+                elements.append('?{} = <{}> '.format(
+                    element_type, term.id))
+            else:
+                elements.append('?{} = <{}> '.format(
+                    element_type, self._toNamespaceURL(term['term'])))
+        elementClause = "({})".format(" || ".join(elements))
+        print("\n\nOntologyTerms: ", elementClause)
+        return elementClause
+
     def _formatIds(self, element, element_type):
         """
         Formats the external identifiers for query
@@ -393,18 +412,28 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
     def _filterSearchPhenotypesRequest(self, request):
         filters = []
         if request.id:
-            phenotypeClause = "?phenotype = <{}>".format(request.id)
-            filters.append(phenotypeClause)
+            filters.append("?phenotype = <{}>".format(request.id))
 
-        # phenotypeClause =
-        #   self._formatExternalIdentifier(request, 'phenotype')
-        # if phenotypeClause:
-        #     filters.append(phenotypeClause)
+        if request.description:
+            filters.append('regex(?phenotype_label, "{}")'
+                           .format(request.description))
         # OntologyTerms
-        ontolgytermsClause = self._formatOntologyTerm(request, 'phenotype')
-        if ontolgytermsClause:
-            filters.append(ontolgytermsClause)
-
+        # TODO: refactor this repetitive code
+        if request.type:
+            ontolgytermsClause = self._formatOntologyTermObject(
+                request.type, 'phenotype')
+            if ontolgytermsClause:
+                filters.append(ontolgytermsClause)
+        if request.qualifiers:
+            ontolgytermsClause = self._formatOntologyTermObject(
+                request.qualifiers, 'phenotype')
+            if ontolgytermsClause:
+                filters.append(ontolgytermsClause)
+        if request.ageOfOnset:
+            ontolgytermsClause = self._formatOntologyTermObject(
+                request.ageOfOnset, 'phenotype')
+            if ontolgytermsClause:
+                filters.append(ontolgytermsClause)
         return filters
 
     def _toNamespaceURL(self, term):

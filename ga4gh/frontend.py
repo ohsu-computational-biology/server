@@ -642,8 +642,8 @@ def getFeature(id):
     '/datasets/<no(search):datasetId>/features/search',
     pathDisplay='/datasets/<datasetId>/features/search', postMethod=True)
 def getFeaturesSearch(datasetId):
-    return handleFlaskGetRequest(
-        datasetId, flask.request, app.backend.runSearchFeatures)
+    return handleFlaskPostRequest(
+        flask.request, app.backend.runSearchFeatures)
 
 
 @DisplayedRoute(
@@ -659,10 +659,8 @@ def getGenotypesSearch():
     '/phenotypes/search',
     postMethod=True)
 def getPhenotypesSearch():
-    print(flask.request.__dict__)
     return handleFlaskPostRequest(
-        flask.request,
-        app.backend.runSearchPhenotypes)
+        flask.request, app.backend.runSearchPhenotypes)
 
 
 @DisplayedRoute(
