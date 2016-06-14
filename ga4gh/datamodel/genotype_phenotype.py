@@ -95,7 +95,6 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
         """
         # query to do search
         query = self._formatFilterQuery(request)
-        print(query)
         associations = self._rdfGraph.query(query)
         # associations is now a dict with rdflib terms with variable and
         # URIrefs or literals
@@ -119,11 +118,9 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
                 association['environment'] = self._getDetails(
                     association['environment'],
                     associations_details)
-                print("**** phenotype")
                 association['phenotype'] = self._getDetails(
                     association['phenotype'],
                     associations_details)
-                print(association['phenotype'])
                 association['evidence'] = association['phenotype'][HAS_QUALITY]
                 association['id'] = association['association']
                 associationList.append(association)
@@ -197,13 +194,11 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
             if detail['subject'] == uriRef:
                 associationDetail[detail['predicate']] = detail['object']
             associationDetail['id'] = uriRef
-        print("associationDetail")
-        print(associationDetail)
         return associationDetail
 
     def _formatExternalIdentifiers(self, element, element_type):
         """
-        Formats the external identifiers for query
+        Formats several external identifiers for query
         """
         elementClause = None
         elements = []
@@ -217,8 +212,9 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
         return elementClause
 
     def _formatExternalIdentifier(self, element, element_type):
-        print("_formatExternalIdentifier")
-        print(element)
+        """
+        Formats a single external identifier for query
+        """
         if "http" not in element['database']:
             term = "{}:{}".format(element['database'], element['identifier'])
             namespaceTerm = self._toNamespaceURL(term)
@@ -278,18 +274,22 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
             elementClause = "({})".format(" || ".join(elements))
         return elementClause
 
-    def _formatRegex(self, element, propertyName, element_type):
-        """
-        Formats the external identifiers for query
-        """
+    def _formatEvidence(self, elements):
         elementClause = None
-        if isinstance(element, list):
-            elements = []
-            for e in element:
-                if e[propertyName]:
-                    elements.append('regex(?{}, "{}")'
-                                    .format(element_type, e[propertyName]))
-            elementClause = "({})".format(" || ".join(elements))
+        filters = []
+        for evidence in elements:
+            if evidence['description']:
+                elementClause = 'regex(?{}, "{}")'.format(
+                    'environment_label', evidence['description'])
+            if evidence['externalIdentifiers']:
+                for externalIdentifier in evidence['externalIdentifiers']:
+                    exid_clause = self._formatExternalIdentifier(
+                        externalIdentifier, 'environment')
+                    # cleanup parens from _formatExternalIdentifier method
+                    elementClause = string[1:-1]
+            if elementClause:
+                filters.append(elementClause)
+        elementClause = "({})".format(" || ".join(filters))
         return elementClause
 
     def _formatFilterQuery(self, request=None):
@@ -376,30 +376,21 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
                 filters.append(featureClause)
 
         if request.evidence:
-            for evidence in request.evidence:
-                print('evidence')
-                print(evidence)
-                if evidence['description']:
-                    featureClause = self._formatRegex(evidence['description'],
-                                                      'description',
-                                                      'environment_label')
-                    if featureClause:
-                        filters.append(featureClause)
-                if evidence['externalIdentifiers']:
-                    for externalIdentifier in evidence['externalIdentifiers']:
-                        featureClause = self._formatExternalIdentifier(
-                                             externalIdentifier, 'environment')
-                        if featureClause:
-                            filters.append(featureClause)
+            evidenceClause = self._formatEvidence(request.evidence)
+            if evidenceClause:
+                filters.append(evidenceClause)
 
-        if request.featureIds:
-            phenotypeClause = self._formatIds(request.featureIds,
+        if request.phenotypeIds:
+            phenotypeClause = self._formatIds(request.phenotypeIds,
                                               'phenotype')
             filters.append(phenotypeClause)
 
         return filters
 
     def _filterSearchGenotypesRequest(self, request):
+        """
+        Filters the request for genotype search requests
+        """
         filters = []
         if request.id:
             filters.append("?feature = <{}>".format(request.id))
@@ -420,6 +411,9 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
         return filters
 
     def _filterSearchPhenotypesRequest(self, request):
+        """
+        Filters request for phenotype search requests
+        """
         filters = []
         if request.id:
             filters.append("?phenotype = <{}>".format(request.id))
@@ -498,6 +492,8 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
         given an association dict,
         return a protocol.FeaturePhenotypeAssociation
         """
+        # TODO: This method needs to broken in several parts. It's
+        # doing too much things
         fpa = None
 
         # The association dict has the keys: environment, environment
@@ -531,6 +527,7 @@ class PhenotypeAssociationSet(AbstractPhenotypeAssociationSet):
         f.id = feature['id']
         f.referenceName = feature[LABEL]
         vals = {}
+        vals = {key: [feature[key]] for key in feature}
         for key in feature:
             vals[key] = [feature[key]]
         f.attributes = protocol.Attributes.fromJsonDict(
