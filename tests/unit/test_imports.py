@@ -169,9 +169,25 @@ class ImportGraphLayerChecker(object):
         'libraries': ['ga4gh/converters.py',
                       'ga4gh/configtest.py'],
         'protocol': ['ga4gh/protocol.py',
-                     'ga4gh/_protocol_definitions.py'],
+                     'ga4gh/pb.py',
+                     'ga4gh/_protocol_version.py',
+                     'ga4gh/common_pb2.py',
+                     'ga4gh/metadata_pb2.py',
+                     'ga4gh/metadata_service_pb2.py',
+                     'ga4gh/read_service_pb2.py',
+                     'ga4gh/reads_pb2.py',
+                     'ga4gh/reference_service_pb2.py',
+                     'ga4gh/references_pb2.py',
+                     'ga4gh/variant_service_pb2.py',
+                     'ga4gh/variants_pb2.py',
+                     'ga4gh/allele_annotations_pb2.py',
+                     'ga4gh/allele_annotation_service_pb2.py',
+                     'ga4gh/sequence_annotations_pb2.py',
+                     'ga4gh/sequence_annotation_service_pb2.py',
+                     'ga4gh/genotype_phenotype_pb2.py',
+                     'ga4gh/genotype_phenotype_service_pb2.py'
+                     ],
         'config': ['ga4gh/serverconfig.py'],
-        'avrotools': ['ga4gh/avrotools.py'],
     }
 
     # each moduleGroupName has one and only one entry here
@@ -183,7 +199,6 @@ class ImportGraphLayerChecker(object):
         ['libraries'],
         ['datamodel'],
         ['exceptions'],
-        ['avrotools'],
         ['config'],
         ['protocol'],
     ]
@@ -321,7 +336,6 @@ class ImportGraphCycleChecker(object):
     # essentially, an entry here removes an edge from the dependency
     # graph as far as cycle detection is concerned
     cycleExclusions = [
-        ['ga4gh/_protocol_definitions.py', 'ga4gh/protocol.py']
     ]
 
     def __init__(self, graph):

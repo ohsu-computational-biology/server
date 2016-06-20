@@ -15,6 +15,7 @@ import ga4gh.datamodel.sequenceAnnotations as sequenceAnnotations
 import ga4gh.datamodel.variants as variants
 import ga4gh.exceptions as exceptions
 import ga4gh.protocol as protocol
+from ga4gh import pb
 import ga4gh.datamodel.genotype_phenotype as g2p
 
 
@@ -84,8 +85,8 @@ class Dataset(datamodel.DatamodelObject):
     def toProtocolElement(self):
         dataset = protocol.Dataset()
         dataset.id = self.getId()
-        dataset.name = self.getLocalId()
-        dataset.description = self.getDescription()
+        dataset.name = pb.string(self.getLocalId())
+        dataset.description = pb.string(self.getDescription())
         return dataset
 
     def getVariantSets(self):
