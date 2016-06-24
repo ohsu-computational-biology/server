@@ -423,8 +423,8 @@ class Backend(object):
         :return: object, nextPageToken pair
         """
         currentIndex = 0
-        if request.pageToken is not None:
-            currentIndex, = _parsePageToken(request.pageToken, 1)
+        if request.page_token:
+            currentIndex, = _parsePageToken(request.page_token, 1)
         while currentIndex < numObjects:
             object_ = getByIndexMethod(currentIndex)
             currentIndex += 1
@@ -675,15 +675,15 @@ class Backend(object):
         """
         # TODO make paging work using SPARQL?
         # determine offset for paging
-        if request.page_token is not None:
-            offset, = _parsePageToken(request.page_token, 1)
+        if request.page_token:
+            offset = _parsePageToken(request.page_token, 1)
         else:
             offset = 0
         compoundId = datamodel.PhenotypeAssociationSetCompoundId.parse(
             request.phenotype_association_set_id)
         dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
         phenotypeAssociationSet = dataset.getPhenotypeAssociationSet(
-            compoundId.phenotype_association_set_id)
+            compoundId.phenotypeAssociationSetId)
         annotationList = phenotypeAssociationSet.getAssociations(
             request, request.page_size, offset)
         phenotypes = [annotation.phenotype for annotation in annotationList]
@@ -697,19 +697,17 @@ class Backend(object):
         """
         # TODO make paging work using SPARQL?
         # determine offset for paging
-        if request.page_token is not None:
-            offset, = _parsePageToken(request.page_token, 1)
+        if request.page_token:
+            offset = _parsePageToken(request.page_token, 1)
         else:
             offset = 0
         compoundId = datamodel.PhenotypeAssociationSetCompoundId.parse(
             request.phenotype_association_set_id)
         dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
         phenotypeAssociationSet = dataset.getPhenotypeAssociationSet(
-            compoundId.phenotype_association_set_id)
-
+            compoundId.phenotypeAssociationSetId)
         annotationList = phenotypeAssociationSet.getAssociations(
             request, request.page_size, offset)
-
         genotypes = []
         for annotation in annotationList:
             genotypes.extend(annotation.features)
@@ -722,15 +720,15 @@ class Backend(object):
         """
         # TODO make paging work using SPARQL?
         # determine offset for paging
-        if request.page_token is not None:
-            offset, = _parsePageToken(request.page_token, 1)
+        if request.page_token:
+            offset = _parsePageToken(request.page_token, 1)
         else:
             offset = 0
         compoundId = datamodel.PhenotypeAssociationSetCompoundId.parse(
             request.phenotype_association_set_id)
         dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
         phenotypeAssociationSet = dataset.getPhenotypeAssociationSet(
-            compoundId.phenotype_association_set_id)
+            compoundId.phenotypeAssociationSetId)
         annotationList = phenotypeAssociationSet.getAssociations(
             request, request.page_size, offset)
         return self._protocolListGenerator(request, annotationList)
@@ -828,8 +826,8 @@ class Backend(object):
         end = _parseIntegerArgument(requestArgs, 'end', reference.getLength())
         if end == 0:  # assume meant "get all"
             end = reference.getLength()
-        if 'pageToken' in requestArgs:
-            pageTokenStr = requestArgs['pageToken']
+        if 'page_token' in requestArgs:
+            pageTokenStr = requestArgs['page_token']
             if pageTokenStr != "":
                 start = _parsePageToken(pageTokenStr, 1)[0]
 
@@ -1095,24 +1093,3 @@ class Backend(object):
             request, protocol.SearchPhenotypeAssociationSetsRequest,
             protocol.SearchPhenotypeAssociationSetsResponse,
             self.phenotypeAssociationSetsGenerator)
-
-    def genotypePhenotypeGenerator(self, request):
-        # TODO make paging work using SPARQL?
-        if (request.evidence is None and
-                request.phenotype is None and
-                request.feature is None):
-            msg = "Error:One of evidence,phenotype or feature must be non-null"
-            raise exceptions.BadRequestException(msg)
-        # determine offset for paging
-        if request.page_token is not None:
-            offset, = _parsePageToken(request.page_token, 1)
-        else:
-            offset = 0
-        compoundId = datamodel.PhenotypeAssociationSetCompoundId.parse(
-            request.phenotypeAssociationSetId)
-        dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
-        phenotypeAssociationSet = dataset.getPhenotypeAssociationSet(
-            compoundId.phenotypeAssociationSetId)
-        annotationList = phenotypeAssociationSet.getAssociations(
-            request, request.page_size, offset)
-        return self._objectListGenerator(request, annotationList)
