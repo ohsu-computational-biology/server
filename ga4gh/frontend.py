@@ -31,6 +31,7 @@ import ga4gh.datarepo as datarepo
 import logging
 from logging import StreamHandler
 
+G2P_STANDALONE = False
 
 MIMETYPE = "application/json"
 SEARCH_ENDPOINT_METHODS = ['POST', 'OPTIONS']
@@ -565,11 +566,16 @@ def searchDatasets():
         flask.request, app.backend.runSearchDatasets)
 
 
+@DisplayedRoute('/phenotypeassociationsets/search', postMethod=True)
+def searchPhenotypeAssociationSets():
+    return handleFlaskPostRequest(
+        flask.request, app.backend.runSearchPhenotypeAssociationSets)
+
+
 @DisplayedRoute('/featuresets/search', postMethod=True)
 def searchFeatureSets():
     return handleFlaskPostRequest(
         flask.request, app.backend.runSearchFeatureSets)
-
 
 @DisplayedRoute('/features/search', postMethod=True)
 def searchFeatures():
@@ -629,6 +635,42 @@ def getFeatureSet(id):
 def getFeature(id):
     return handleFlaskGetRequest(
         id, flask.request, app.backend.runGetFeature)
+
+# G2P API endpoints as proposed in
+# https://github.com/ohsu-computational-biology/schemas/blob/apichanges/doc/source/api/proposed_schema_changes.md#genotypephenotypessearch
+
+
+@DisplayedRoute(
+    '/datasets/<no(search):datasetId>/features/search',
+    pathDisplay='/datasets/<datasetId>/features/search', postMethod=True)
+def getFeaturesSearch(datasetId):
+    return handleFlaskPostRequest(
+        flask.request, app.backend.runSearchFeatures)
+
+
+@DisplayedRoute(
+    '/genotypes/search',
+    postMethod=True)
+def getGenotypesSearch():
+    return handleFlaskPostRequest(
+        flask.request,
+        app.backend.runSearchGenotypes)
+
+@DisplayedRoute(
+    '/phenotypes/search',
+    postMethod=True)
+def getPhenotypesSearch():
+    return handleFlaskPostRequest(
+        flask.request, app.backend.runSearchPhenotypes)
+
+
+@DisplayedRoute(
+    '/genotypephenotypes/search',
+    postMethod=True)
+def getGenotypePhenotypesSearch():
+    return handleFlaskPostRequest(
+        flask.request,
+        app.backend.runSearchGenotypePhenotypes)
 
 
 @app.route('/oauth2callback', methods=['GET'])

@@ -37,6 +37,8 @@ import ga4gh.datamodel.references as references
 import ga4gh.datamodel.sequenceAnnotations as sequenceAnnotations
 import ga4gh.datamodel.datasets as datasets
 import ga4gh.datamodel.ontologies as ontologies
+# TODO David pluralize ?
+import ga4gh.datamodel.genotype_phenotype as genotype_phenotype
 
 
 # the maximum value of a long type in avro = 2**63 - 1
@@ -1641,6 +1643,22 @@ class RepoManager(object):
         ontology.populateFromFile(filePath)
         self._updateRepo(self._repo.insertOntology, ontology)
 
+    def addPhenotypeAssociationSet(self):
+        """
+        Adds a new G2P to this repo.
+        """
+        self._openRepo()
+        name = self._args.name
+        if name is None:
+            name = getNameFromPath(self._args.registryPath)
+        dataset = self._repo.getDatasetByName(self._args.datasetName)
+        # parentContainer, localId, dataDir
+        phenotypeAssociationSet = \
+            genotype_phenotype \
+            .PhenotypeAssociationSet(dataset, name, self._args.filePath)
+        self._updateRepo(self._repo.insertPhenotypeAssociationSet,
+                         phenotypeAssociationSet)
+
     def addDataset(self):
         """
         Adds a new dataset into this repo.
@@ -1866,6 +1884,7 @@ class RepoManager(object):
         self._checkSequenceOntology(ontology)
         featureSet.setOntology(ontology)
         featureSet.populateFromFile(filePath)
+        print(featureSet,name,featureSet.getId())
         self._updateRepo(self._repo.insertFeatureSet, featureSet)
 
     def removeFeatureSet(self):
@@ -2172,6 +2191,25 @@ class RepoManager(object):
         cls.addDatasetNameArgument(removeFeatureSetParser)
         cls.addFeatureSetNameArgument(removeFeatureSetParser)
         cls.addForceOption(removeFeatureSetParser)
+
+        addPhenotypeAssociationSetParser = addSubparser(
+            subparsers, "add-g2p",
+            "Adds phenotypes in ttl format to the repo.")
+        addPhenotypeAssociationSetParser.set_defaults(
+                                         runner="addPhenotypeAssociationSet")
+        cls.addRepoArgument(addPhenotypeAssociationSetParser)
+        cls.addFilePathArgument(
+            addPhenotypeAssociationSetParser,
+            "The path of the ttl file defining phenotypes.")
+        cls.addDatasetNameArgument(addPhenotypeAssociationSetParser)
+        cls.addNameOption(addPhenotypeAssociationSetParser, "PhenotypeAssociationSet") 
+
+        removePhenotypeAssociationSetParser = addSubparser(
+            subparsers, "remove-g2p",
+            "Remove an phenotypes from the repo")
+        removePhenotypeAssociationSetParser \
+            .set_defaults(runner="removePhenotypeAssociationSet")
+        cls.addRepoArgument(removePhenotypeAssociationSetParser)
 
         return parser
 

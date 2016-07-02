@@ -412,6 +412,40 @@ class Backend(object):
         """
         yield (datamodelObject.toProtocolElement(), None)
 
+    def _protocolObjectGenerator(self, request, numObjects, getByIndexMethod):
+        """
+        Yields (object, nextPageToken) pairs according to the request
+        pageToken. The listed objects, unlike _topLevelObjectGenerator
+        have already been coerced to their protocol form.
+        :param request: The request containing an optional page token
+        :param numObjects: The length of the list to take from
+        :param getByIndexMethod: A function for accessing objects by index
+        :return: object, nextPageToken pair
+        """
+        currentIndex = 0
+        if request.page_token:
+            currentIndex, = _parsePageToken(request.page_token, 1)
+        while currentIndex < numObjects:
+            object_ = getByIndexMethod(currentIndex)
+            currentIndex += 1
+            nextPageToken = None
+            if currentIndex < numObjects:
+                nextPageToken = str(currentIndex)
+            yield object_, nextPageToken
+
+    def _protocolListGenerator(self, request, objectList):
+        """
+        Convenience function for working with a list of objects that
+        have already been coerced to their protocol equivalent. This
+        may be useful for objects that are not ordered by their
+        genomic position, but by their order in this list.
+        :param request: The request with pagetokens.
+        :param objectList: A list of ga4gh.protocol objects
+        :return: generator for objects in this list
+        """
+        return self._protocolObjectGenerator(
+            request, len(objectList), lambda index: objectList[index])
+
     def _noObjectGenerator(self):
         """
         Returns a generator yielding no results
@@ -426,6 +460,16 @@ class Backend(object):
         return self._topLevelObjectGenerator(
             request, self.getDataRepository().getNumDatasets(),
             self.getDataRepository().getDatasetByIndex)
+
+    def phenotypeAssociationSetsGenerator(self, request):
+        """
+        Returns a generator over the (phenotypeAssociationSet, nextPageToken)
+        pairs defined by the specified request
+        """
+        dataset = self.getDataRepository().getDataset(request.dataset_id)
+        return self._topLevelObjectGenerator(
+            request, dataset.getNumPhenotypeAssociationSets(),
+            dataset.getPhenotypeAssociationSetByIndex)
 
     def readGroupSetsGenerator(self, request):
         """
@@ -625,10 +669,105 @@ class Backend(object):
         else:
             start = request.start
             end = request.end
+
+        # if we have a feature set named the same as
+        # the phenotypeAssociationSet, use the phenotypeAssociationSet
+        # to resolve feature queries
+        try:
+            phenotypeAssociationSet = \
+                dataset.getPhenotypeAssociationSetByName(featureSet.getLocalId())
+        except:
+            phenotypeAssociationSet = None
+
+        if  phenotypeAssociationSet:
+            #print("use g2p to resolve features ...")
+            if request.page_token:
+                offset = _parsePageToken(request.page_token, 1)
+            else:
+                offset = 0
+            annotationList = phenotypeAssociationSet.getAssociations(
+                request, request.page_size, offset)
+            features = []
+            for annotation in annotationList:
+                features.extend(annotation.features)
+            return self._protocolListGenerator(request, features)
+
+        # otherwise use sequence annotations ...
         return featureSet.getFeatures(
             request.reference_name, start, end,
             request.page_token, request.page_size,
             request.feature_types, parentId, request.name, request.gene_symbol)
+
+
+    def phenotypesGenerator(self, request):
+        """
+        Returns a generator over the (phenotypes, nextPageToken) pairs
+        defined by the (JSON string) request
+        """
+        # TODO make paging work using SPARQL?
+        # determine offset for paging
+        if request.page_token:
+            offset = _parsePageToken(request.page_token, 1)
+        else:
+            offset = 0
+        compoundId = datamodel.PhenotypeAssociationSetCompoundId.parse(
+            request.phenotype_association_set_id)
+        dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
+        phenotypeAssociationSet = dataset.getPhenotypeAssociationSet(
+            compoundId.phenotypeAssociationSetId)
+        annotationList = phenotypeAssociationSet.getAssociations(
+            request, request.page_size, offset)
+        phenotypes = [annotation.phenotype for annotation in annotationList]
+        return self._protocolListGenerator(request,
+                                           phenotypes)
+
+    def genotypesGenerator(self, request):
+        """
+        Returns a generator over the (phenotypes, nextPageToken) pairs
+        defined by the (JSON string) request
+        """
+        # TODO make paging work using SPARQL?
+        # determine offset for paging
+        if request.page_token:
+            offset = _parsePageToken(request.page_token, 1)
+        else:
+            offset = 0
+        compoundId = datamodel.PhenotypeAssociationSetCompoundId.parse(
+            request.phenotype_association_set_id)
+        dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
+        phenotypeAssociationSet = dataset.getPhenotypeAssociationSet(
+            compoundId.phenotypeAssociationSetId)
+        annotationList = phenotypeAssociationSet.getAssociations(
+            request, request.page_size, offset)
+        genotypes = []
+        for annotation in annotationList:
+            genotypes.extend(annotation.features)
+        return self._protocolListGenerator(request, genotypes)
+
+    #    import ipdb; ipdb.set_trace()
+    def genotypesPhenotypesGenerator(self, request):
+        """
+        Returns a generator over the (phenotypes, nextPageToken) pairs
+        defined by the (JSON string) request
+        """
+        # TODO make paging work using SPARQL?
+        # determine offset for paging
+        if request.page_token:
+            offset = _parsePageToken(request.page_token, 1)
+        else:
+            offset = 0
+        compoundId = datamodel.PhenotypeAssociationSetCompoundId.parse(
+            request.phenotype_association_set_id)
+
+        dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
+        # how to wire in featureSet here? (the dataset contains these featuresets)
+        # given g2p will have a set of ids it will need to query each of these
+        # [u'discontinuous', u'gencodeV21Set1', u'specialCasesTest', u'sacCerTest']
+        phenotypeAssociationSet = dataset.getPhenotypeAssociationSet(
+            compoundId.phenotypeAssociationSetId)
+        annotationList = phenotypeAssociationSet.getAssociations(
+            request, request.page_size, offset, dataset.getFeatureSets() )
+        return self._protocolListGenerator(request, annotationList)
 
     def callSetsGenerator(self, request):
         """
@@ -723,8 +862,8 @@ class Backend(object):
         end = _parseIntegerArgument(requestArgs, 'end', reference.getLength())
         if end == 0:  # assume meant "get all"
             end = reference.getLength()
-        if 'pageToken' in requestArgs:
-            pageTokenStr = requestArgs['pageToken']
+        if 'page_token' in requestArgs:
+            pageTokenStr = requestArgs['page_token']
             if pageTokenStr != "":
                 start = _parsePageToken(pageTokenStr, 1)[0]
 
@@ -777,8 +916,17 @@ class Backend(object):
         compoundId = datamodel.FeatureCompoundId.parse(id_)
         dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
         featureSet = dataset.getFeatureSet(compoundId.feature_set_id)
-        gaFeature = featureSet.getFeature(compoundId)
-        jsonString = protocol.toJson(gaFeature)
+        # if we have a feature set named the same as
+        # the phenotypeAssociationSet, use the phenotypeAssociationSet
+        # to resolve feature queries
+        try:
+            phenotypeAssociationSet = \
+                dataset.getPhenotypeAssociationSetByName(featureSet.getLocalId())
+            gaFeature = phenotypeAssociationSet.getFeature(compoundId)
+            jsonString = protocol.toJson(gaFeature)
+        except KeyError:
+            gaFeature = featureSet.getFeature(compoundId)
+            jsonString = protocol.toJson(gaFeature)
         return jsonString
 
     def runGetReadGroupSet(self, id_):
@@ -966,3 +1114,40 @@ class Backend(object):
             request, protocol.SearchFeaturesRequest,
             protocol.SearchFeaturesResponse,
             self.featuresGenerator)
+
+    def runSearchGenotypePhenotypes(self, request):
+        return self.runSearchRequest(
+            request, protocol.SearchGenotypePhenotypeRequest,
+            protocol.SearchGenotypePhenotypeResponse,
+            self.genotypesPhenotypesGenerator)
+
+    def runSearchPhenotypes(self, request):
+        return self.runSearchRequest(
+            request, protocol.SearchPhenotypesRequest,
+            protocol.SearchPhenotypesResponse,
+            self.phenotypesGenerator)
+
+    def runSearchGenotypes(self, request):
+        return self.runSearchRequest(
+            request, protocol.SearchGenotypesRequest,
+            protocol.SearchGenotypesResponse,
+            self.genotypesGenerator)
+
+    def runSearchFeaturesInG2P(self, request):
+        """
+        Returns a SearchFeaturesResponse for the specified
+        SearchFeaturesRequest object.
+
+        :param request: JSON string representing searchFeaturesRequest
+        :return: JSON string representing searchFeatureResponse
+        """
+        return self.runSearchRequest(
+            request, protocol.SearchFeaturesRequest,
+            protocol.SearchFeaturesResponse,
+            self.featuresGeneratorInG2P)
+
+    def runSearchPhenotypeAssociationSets(self, request):
+        return self.runSearchRequest(
+            request, protocol.SearchPhenotypeAssociationSetsRequest,
+            protocol.SearchPhenotypeAssociationSetsResponse,
+            self.phenotypeAssociationSetsGenerator)

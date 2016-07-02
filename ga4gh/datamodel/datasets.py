@@ -5,6 +5,10 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import fnmatch
+import json
+import os
+
 import ga4gh.datamodel as datamodel
 import ga4gh.datamodel.reads as reads
 import ga4gh.datamodel.sequenceAnnotations as sequenceAnnotations
@@ -12,6 +16,7 @@ import ga4gh.datamodel.variants as variants
 import ga4gh.exceptions as exceptions
 import ga4gh.protocol as protocol
 from ga4gh import pb
+import ga4gh.datamodel.genotype_phenotype as g2p
 
 
 class Dataset(datamodel.DatamodelObject):
@@ -32,6 +37,9 @@ class Dataset(datamodel.DatamodelObject):
         self._readGroupSetIds = []
         self._readGroupSetIdMap = {}
         self._readGroupSetNameMap = {}
+        self._phenotypeAssociationSetIdMap = {}
+        self._phenotypeAssociationSetNameMap = {}
+        self._phenotypeAssociationSetIds = []
 
     def populateFromRow(self, row):
         """
@@ -116,6 +124,40 @@ class Dataset(datamodel.DatamodelObject):
         if name not in self._variantSetNameMap:
             raise exceptions.VariantSetNameNotFoundException(name)
         return self._variantSetNameMap[name]
+
+    def addPhenotypeAssociationSet(self, phenotypeAssociationSet):
+        """
+        Adds the specified g2p association set to this backend.
+        """
+        id_ = phenotypeAssociationSet.getId()
+        self._phenotypeAssociationSetIdMap[id_] = phenotypeAssociationSet
+        self._phenotypeAssociationSetNameMap[
+            phenotypeAssociationSet.getLocalId()] = phenotypeAssociationSet
+        self._phenotypeAssociationSetIds.append(id_)
+
+    def getPhenotypeAssociationSets(self):
+        return [self._phenotypeAssociationSetIdMap[id_]
+                for id_ in self._phenotypeAssociationSetIdMap]
+
+    def getPhenotypeAssociationSet(self, id_):
+        return self._phenotypeAssociationSetIdMap[id_]
+
+    def getPhenotypeAssociationSetByName(self, name):
+        if name not in self._phenotypeAssociationSetNameMap:
+            # TODO make a new exception
+            # TODO is this codeblock reachable?
+            raise exceptions.DatasetNameNotFoundException(name)
+        return self._phenotypeAssociationSetNameMap[name]
+
+    def getPhenotypeAssociationSetByIndex(self, index):
+        return self._phenotypeAssociationSetIdMap[
+            self._phenotypeAssociationSetIds[index]]
+
+    def getNumPhenotypeAssociationSets(self):
+        """
+        Returns the number of reference sets in this data repository.
+        """
+        return len(self._phenotypeAssociationSetIds)
 
     def getFeatureSets(self):
         """
@@ -204,9 +246,17 @@ class SimulatedDataset(Dataset):
             self, localId, referenceSet, randomSeed=0,
             numVariantSets=1, numCalls=1, variantDensity=0.5,
             numReadGroupSets=1, numReadGroupsPerReadGroupSet=1,
-            numAlignments=1, numFeatureSets=1):
+            numAlignments=1, numFeatureSets=1, numPhenotypeAssociationSets=1):
         super(SimulatedDataset, self).__init__(localId)
         self._description = "Simulated dataset {}".format(localId)
+
+        for i in range(numPhenotypeAssociationSets):
+            localId = "simPas{}".format(i)
+            seed = randomSeed + i
+            phenotypeAssociationSet = g2p.SimulatedPhenotypeAssociationSet(
+                self, localId, seed)
+            self.addPhenotypeAssociationSet(phenotypeAssociationSet)
+
         # TODO create a simulated Ontology
         # Variants
         for i in range(numVariantSets):
@@ -234,3 +284,57 @@ class SimulatedDataset(Dataset):
                 self, localId, seed)
             featureSet.setReferenceSet(referenceSet)
             self.addFeatureSet(featureSet)
+
+
+class FileSystemDataset(Dataset):
+    """
+    A dataset based on the file system
+    """
+    variantsDirName = "variants"
+    readsDirName = "reads"
+    phenotypeAssociationSetsDirName = "phenotypes"
+
+    def __init__(self, localId, dataDir, dataRepository):
+        super(FileSystemDataset, self).__init__(localId)
+        self._dataDir = dataDir
+        self._setMetadata()
+
+        phenotypeAssociationSetDir = \
+            os.path.join(dataDir, self.phenotypeAssociationSetsDirName)
+        for localId in os.listdir(phenotypeAssociationSetDir):
+            relativePath = os.path.join(phenotypeAssociationSetDir, localId)
+            if os.path.isdir(relativePath):
+                # TODO pass in datarepo because for connecting
+                # ontology sources
+                phenotypeAssociationSet = g2p.PhenotypeAssociationSet(
+                    self, localId, relativePath)
+                self.addPhenotypeAssociationSet(phenotypeAssociationSet)
+
+        # Variants
+        variantSetDir = os.path.join(dataDir, self.variantsDirName)
+        for localId in os.listdir(variantSetDir):
+            relativePath = os.path.join(variantSetDir, localId)
+            if os.path.isdir(relativePath):
+                variantSet = variants.HtslibVariantSet(
+                    self, localId, relativePath, dataRepository)
+                self.addVariantSet(variantSet)
+        # Reads
+        readGroupSetDir = os.path.join(dataDir, self.readsDirName)
+        for filename in os.listdir(readGroupSetDir):
+            if fnmatch.fnmatch(filename, '*.bam'):
+                localId, _ = os.path.splitext(filename)
+                bamPath = os.path.join(readGroupSetDir, filename)
+                readGroupSet = reads.HtslibReadGroupSet(
+                    self, localId, bamPath, dataRepository)
+                self.addReadGroupSet(readGroupSet)
+
+    def _setMetadata(self):
+        metadataFileName = '{}.json'.format(self._dataDir)
+        if os.path.isfile(metadataFileName):
+            with open(metadataFileName) as metadataFile:
+                metadata = json.load(metadataFile)
+                try:
+                    self._description = metadata['description']
+                except KeyError as err:
+                    raise exceptions.MissingDatasetMetadataException(
+                        metadataFileName, str(err))
