@@ -18,7 +18,7 @@ class TestG2P(unittest.TestCase):
     def setUpClass(cls):
         config = {
             "DATA_SOURCE": paths.testDataRepo,
-            "DEBUG": True
+            "DEBUG": False
         }
         frontend.reset()
         frontend.configure(

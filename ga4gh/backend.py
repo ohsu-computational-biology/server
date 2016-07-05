@@ -670,28 +670,6 @@ class Backend(object):
             start = request.start
             end = request.end
 
-        # if we have a feature set named the same as
-        # the phenotypeAssociationSet, use the phenotypeAssociationSet
-        # to resolve feature queries
-        try:
-            phenotypeAssociationSet = \
-                dataset.getPhenotypeAssociationSetByName(featureSet.getLocalId())
-        except:
-            phenotypeAssociationSet = None
-
-        if  phenotypeAssociationSet:
-            #print("use g2p to resolve features ...")
-            if request.page_token:
-                offset = _parsePageToken(request.page_token, 1)
-            else:
-                offset = 0
-            annotationList = phenotypeAssociationSet.getAssociations(
-                request, request.page_size, offset)
-            features = []
-            for annotation in annotationList:
-                features.extend(annotation.features)
-            return self._protocolListGenerator(request, features)
-
         # otherwise use sequence annotations ...
         return featureSet.getFeatures(
             request.reference_name, start, end,
@@ -916,18 +894,10 @@ class Backend(object):
         compoundId = datamodel.FeatureCompoundId.parse(id_)
         dataset = self.getDataRepository().getDataset(compoundId.dataset_id)
         featureSet = dataset.getFeatureSet(compoundId.feature_set_id)
-        # if we have a feature set named the same as
-        # the phenotypeAssociationSet, use the phenotypeAssociationSet
-        # to resolve feature queries
-        try:
-            phenotypeAssociationSet = \
-                dataset.getPhenotypeAssociationSetByName(featureSet.getLocalId())
-            gaFeature = phenotypeAssociationSet.getFeature(compoundId)
-            jsonString = protocol.toJson(gaFeature)
-        except KeyError:
-            gaFeature = featureSet.getFeature(compoundId)
-            jsonString = protocol.toJson(gaFeature)
+        gaFeature = featureSet.getFeature(compoundId)
+        jsonString = protocol.toJson(gaFeature)
         return jsonString
+
 
     def runGetReadGroupSet(self, id_):
         """
@@ -1132,19 +1102,6 @@ class Backend(object):
             request, protocol.SearchGenotypesRequest,
             protocol.SearchGenotypesResponse,
             self.genotypesGenerator)
-
-    def runSearchFeaturesInG2P(self, request):
-        """
-        Returns a SearchFeaturesResponse for the specified
-        SearchFeaturesRequest object.
-
-        :param request: JSON string representing searchFeaturesRequest
-        :return: JSON string representing searchFeatureResponse
-        """
-        return self.runSearchRequest(
-            request, protocol.SearchFeaturesRequest,
-            protocol.SearchFeaturesResponse,
-            self.featuresGeneratorInG2P)
 
     def runSearchPhenotypeAssociationSets(self, request):
         return self.runSearchRequest(

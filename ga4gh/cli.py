@@ -41,6 +41,7 @@ import ga4gh.datamodel.ontologies as ontologies
 import ga4gh.datamodel.genotype_phenotype as genotype_phenotype
 
 
+
 # the maximum value of a long type in avro = 2**63 - 1
 # (64 bit signed integer)
 # http://avro.apache.org/docs/1.7.7/spec.html#schema_primitive
@@ -1868,6 +1869,14 @@ class RepoManager(object):
         filePath = self._getFilePath(self._args.filePath,
                                      self._args.relativePath)
         name = getNameFromPath(self._args.filePath)
+        # print("addFeatureSet name={}".format(name))
+        # if name == 'cgd':
+        #     # parentContainer, localId, dataDir
+        #     print("Using PhenotypeAssociationSet as featureSet ")
+        #     featureSet = \
+        #         g2pFeatureset \
+        #         .PhenotypeAssociationFeatureSet(dataset, name)
+        # else:
         featureSet = sequenceAnnotations.Gff3DbFeatureSet(
             dataset, name)
         referenceSetName = self._args.referenceSetName
@@ -1884,7 +1893,6 @@ class RepoManager(object):
         self._checkSequenceOntology(ontology)
         featureSet.setOntology(ontology)
         featureSet.populateFromFile(filePath)
-        print(featureSet,name,featureSet.getId())
         self._updateRepo(self._repo.insertFeatureSet, featureSet)
 
     def removeFeatureSet(self):
@@ -2202,7 +2210,7 @@ class RepoManager(object):
             addPhenotypeAssociationSetParser,
             "The path of the ttl file defining phenotypes.")
         cls.addDatasetNameArgument(addPhenotypeAssociationSetParser)
-        cls.addNameOption(addPhenotypeAssociationSetParser, "PhenotypeAssociationSet") 
+        cls.addNameOption(addPhenotypeAssociationSetParser, "PhenotypeAssociationSet")
 
         removePhenotypeAssociationSetParser = addSubparser(
             subparsers, "remove-g2p",
