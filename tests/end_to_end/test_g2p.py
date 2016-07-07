@@ -98,48 +98,48 @@ class TestG2P(unittest.TestCase):
         self.assertGreater(len(response.phenotype_association_sets), 0)
         print(response)
 
-    def testGenotypesSearchByExternalIdentifier(self):
-        request = protocol.SearchGenotypesRequest()
-        request.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
-        # setup the external identifiers query
-        extid = protocol.ExternalIdentifier()
-        # http://www.ncbi.nlm.nih.gov/SNP/121908585
-        extid.identifier = "121908585"
-        extid.version = "*"
-        extid.database = "dbSNP"
-        request.external_identifiers.extend([extid])
-        response = self.sendSearchRequest(
-            '/genotypes/search',
-            request,
-            protocol.SearchGenotypesResponse)
-        self.assertEqual(1, len(response.genotypes))
+    # def testGenotypesSearchByExternalIdentifier(self):
+    #     request = protocol.SearchGenotypesRequest()
+    #     request.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
+    #     # setup the external identifiers query
+    #     extid = protocol.ExternalIdentifier()
+    #     # http://www.ncbi.nlm.nih.gov/SNP/121908585
+    #     extid.identifier = "121908585"
+    #     extid.version = "*"
+    #     extid.database = "dbSNP"
+    #     request.external_identifiers.extend([extid])
+    #     response = self.sendSearchRequest(
+    #         '/genotypes/search',
+    #         request,
+    #         protocol.SearchGenotypesResponse)
+    #     self.assertEqual(1, len(response.genotypes))
 
-    def testFindFeatureExternalIdentifier(self):
-        request = protocol.SearchGenotypesRequest()
-        request.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
-        # setup the external identifiers query
-        extid = protocol.ExternalIdentifier()
-        # http://www.ncbi.nlm.nih.gov/SNP/121908585
-        extid.identifier = "121908585"
-        extid.version = "*"
-        extid.database = "dbSNP"
-        request.external_identifiers.extend([extid])
-        response = self.sendSearchRequest(
-            '/genotypes/search',
-            request,
-            protocol.SearchGenotypesResponse)
-        self.assertEqual(1, len(response.genotypes))
-        genotypeId = response.genotypes[0].id
-
-        request = protocol.SearchGenotypePhenotypeRequest()
-        request.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
-        request.genotype_ids.append(genotypeId)
-        response = self.sendSearchRequest(
-            '/genotypephenotypes/search',
-            request,
-            protocol.SearchGenotypePhenotypeResponse)
-        self.assertEqual(1, len(response.associations))
-        self.assertEqual(1, len(response.associations[0].features))
+    # def testFindFeatureExternalIdentifier(self):
+    #     request = protocol.SearchGenotypesRequest()
+    #     request.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
+    #     # setup the external identifiers query
+    #     extid = protocol.ExternalIdentifier()
+    #     # http://www.ncbi.nlm.nih.gov/SNP/121908585
+    #     extid.identifier = "121908585"
+    #     extid.version = "*"
+    #     extid.database = "dbSNP"
+    #     request.external_identifiers.extend([extid])
+    #     response = self.sendSearchRequest(
+    #         '/genotypes/search',
+    #         request,
+    #         protocol.SearchGenotypesResponse)
+    #     self.assertEqual(1, len(response.genotypes))
+    #     genotypeId = response.genotypes[0].id
+    #
+    #     request = protocol.SearchGenotypePhenotypeRequest()
+    #     request.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
+    #     request.genotype_ids.append(genotypeId)
+    #     response = self.sendSearchRequest(
+    #         '/genotypephenotypes/search',
+    #         request,
+    #         protocol.SearchGenotypePhenotypeResponse)
+    #     self.assertEqual(1, len(response.associations))
+    #     self.assertEqual(1, len(response.associations[0].features))
 
 
 
@@ -211,50 +211,58 @@ class TestG2P(unittest.TestCase):
             request,
             protocol.SearchGenotypePhenotypeResponse)
         self.assertEqual(1, len(response.associations))
-        self.assertEqual(1, len(response.associations[0].features))
+        self.assertEqual(1, len(response.associations[0].featureIds))
 
 
-    def testGenotypesSearchById(self):
-        request = protocol.SearchGenotypesRequest()
-        request.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
+    def testFeaturesSearchById(self):
+        (datasetName,featureSet) = self.getCGDDataSetFeatureSet()
+        featureId = "http://cancer.sanger.ac.uk/cosmic/mutation/overview?id=965"
+        obfuscated = self.getObfuscatedFeatureCompoundId(datasetName,featureSet.name,featureId)
+        request = protocol.GetFeatureRequest
+        request.feature_id = obfuscated
+        response = self.sendGetRequest(
+            '/features/{}'.format(obfuscated))
+
+        feature = protocol.fromJson(response.data, protocol.Feature)
+
+        self.assertIsNotNone(feature)
+        self.assertEqual(request.feature_id , feature.id)
+
+    def testGenotypesSearchByName(self):
         # setup phenotype query
-        request.id = \
-            "http://cancer.sanger.ac.uk/cosmic/mutation/overview?id=965"
-        postUrl = '/genotypes/search'
+        request = protocol.SearchFeaturesRequest()
+        (datasetName,featureSet) = self.getCGDDataSetFeatureSet()
+        request.feature_set_id = featureSet.id
+        request.name = "RET M918T missense mutation"
+
+        postUrl = "features/search"
         response = self.sendSearchRequest(
             postUrl,
             request,
-            protocol.SearchGenotypesResponse)
-        self.assertEqual(request.id, response.genotypes[0].id)
-
-    def testGenotypesSearchByReferenceName(self):
-        request = protocol.SearchGenotypesRequest()
-        request.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
-        # setup phenotype query
-        request.reference_name = "RET M918T missense mutation"
-        postUrl = '/genotypes/search'
-        response = self.sendSearchRequest(
-            postUrl,
-            request,
-            protocol.SearchGenotypesResponse)
+            protocol.SearchFeaturesResponse)
+        self.assertEqual(1, len(response.features))
         self.assertEqual(
             "http://cancer.sanger.ac.uk/cosmic/mutation/overview?id=965",
-            response.genotypes[0].id)
+            datamodel.FeatureCompoundId.parse(response.features[0].id).featureId
+            )
+        self.assertEqual(
+            request.name,
+            response.features[0].name
+            )
 
-    def testGenotypesSearchByReferenceNameKIT(self):
-        request = protocol.SearchGenotypesRequest()
-        request.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
-        # setup phenotype query
-        request.reference_name = \
+    def testGenotypesSearchByNameKIT(self):
+        request = protocol.SearchFeaturesRequest()
+        (datasetName,featureSet) = self.getCGDDataSetFeatureSet()
+        request.feature_set_id = featureSet.id
+        request.name = \
             "KIT *wild"
-        postUrl = '/genotypes/search'
+        postUrl = "features/search"
         response = self.sendSearchRequest(
             postUrl,
             request,
-            protocol.SearchGenotypesResponse)
-        self.assertEqual(
-            "http://ohsu.edu/cgd/27d2169c",
-            response.genotypes[0].id)
+            protocol.SearchFeaturesResponse)
+        print(response.features)
+        self.assertEqual(3, len(response.features))
 
     def testPhenotypesSearchById(self):
         request = protocol.SearchPhenotypesRequest()
@@ -368,7 +376,7 @@ class TestG2P(unittest.TestCase):
             '/genotypephenotypes/search',
             request,
             protocol.SearchGenotypePhenotypeResponse)
-        self.assertEqual(1, len(response.associations[0].features))
+        self.assertEqual(1, len(response.associations[0].featureIds))
 
     def testGenotypePhenotypeSearchEvidence(self):
         """
@@ -383,7 +391,7 @@ class TestG2P(unittest.TestCase):
             '/genotypephenotypes/search',
             request,
             protocol.SearchGenotypePhenotypeResponse)
-        self.assertEqual(1, len(response.associations[0].features))
+        self.assertEqual(1, len(response.associations[0].featureIds))
 
     def testGenotypePhenotypeSearchPhenotype(self):
         """
@@ -396,7 +404,7 @@ class TestG2P(unittest.TestCase):
             '/genotypephenotypes/search',
             request,
             protocol.SearchGenotypePhenotypeResponse)
-        self.assertEqual(1, len(response.associations[0].features))
+        self.assertEqual(1, len(response.associations[0].featureIds))
 
     def testNoFind(self):
         request = protocol.SearchGenotypePhenotypeRequest()
@@ -444,68 +452,68 @@ class TestG2P(unittest.TestCase):
         """
         If page size is set to 1 only one association should be returned
         """
-        request = protocol.SearchGenotypesRequest()
-        request.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
-        # setup phenotype query
+        request = protocol.SearchFeaturesRequest()
         request.page_size = 1
-        request.reference_name = \
+        (datasetName,featureSet) = self.getCGDDataSetFeatureSet()
+        request.feature_set_id = featureSet.id
+        request.name = \
             "KIT *wild"
-        postUrl = '/genotypes/search'
+        postUrl = "features/search"
         response = self.sendSearchRequest(
             postUrl,
             request,
-            protocol.SearchGenotypesResponse)
-        self.assertEqual(1, len(response.genotypes))
+            protocol.SearchFeaturesResponse)
+        self.assertEqual(1, len(response.features))
         self.assertIsNotNone(response.next_page_token)
 
-    def testGenotypeSearchFeaturePagingMore(self):
-        """
-        If page size is not set to more than one association should be returned
-        """
-        request = protocol.SearchGenotypesRequest()
-        request.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
-        # setup phenotype query
-        request.reference_name = \
-            "KIT *wild"
-        postUrl = '/genotypes/search'
-        response = self.sendSearchRequest(
-            postUrl,
-            request,
-            protocol.SearchGenotypesResponse)
-        self.assertGreater(len(response.genotypes), 1)
-        self.assertEqual(response.next_page_token, '')
+    # def testGenotypeSearchFeaturePagingMore(self):
+    #     """
+    #     If page size is not set to more than one association should be returned
+    #     """
+    #     request = protocol.SearchGenotypesRequest()
+    #     request.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
+    #     # setup phenotype query
+    #     request.reference_name = \
+    #         "KIT *wild"
+    #     postUrl = '/genotypes/search'
+    #     response = self.sendSearchRequest(
+    #         postUrl,
+    #         request,
+    #         protocol.SearchGenotypesResponse)
+    #     self.assertGreater(len(response.genotypes), 1)
+    #     self.assertEqual(response.next_page_token, '')
 
-    def testGenotypeSearchFeaturePagingAll(self):
-        """
-        Loop through all pages
-        """
-        request = protocol.SearchGenotypesRequest()
-        request.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
-        # setup phenotype query
-        request.page_size = 1
-        request.reference_name = \
-            "KIT *wild"
-        postUrl = '/genotypes/search'
-        response = self.sendSearchRequest(
-            postUrl,
-            request,
-            protocol.SearchGenotypesResponse)
-        self.assertEqual(1, len(response.genotypes))
-        self.assertIsNotNone(response.next_page_token)
-        pageCount = 1
-        while response.next_page_token:
-            previous_id = response.genotypes[0].id
-            request = protocol.SearchGenotypesRequest()
-            request.phenotype_association_set_id =\
-                self.getPhenotypeAssociationSetId()
-            request.page_token = response.next_page_token
-            request.page_size = 1
-            request.reference_name = "KIT *wild"
-            response = self.sendSearchRequest(
-                postUrl,
-                request,
-                protocol.SearchGenotypesResponse)
-            self.assertEqual(1, len(response.genotypes))
-            self.assertNotEqual(previous_id, response.genotypes[0].id)
-            pageCount += 1
-        self.assertEqual(3, pageCount)
+    # def testGenotypeSearchFeaturePagingAll(self):
+    #     """
+    #     Loop through all pages
+    #     """
+    #     request = protocol.SearchGenotypesRequest()
+    #     request.phenotype_association_set_id = self.getPhenotypeAssociationSetId()
+    #     # setup phenotype query
+    #     request.page_size = 1
+    #     request.reference_name = \
+    #         "KIT *wild"
+    #     postUrl = '/genotypes/search'
+    #     response = self.sendSearchRequest(
+    #         postUrl,
+    #         request,
+    #         protocol.SearchGenotypesResponse)
+    #     self.assertEqual(1, len(response.genotypes))
+    #     self.assertIsNotNone(response.next_page_token)
+    #     pageCount = 1
+    #     while response.next_page_token:
+    #         previous_id = response.genotypes[0].id
+    #         request = protocol.SearchGenotypesRequest()
+    #         request.phenotype_association_set_id =\
+    #             self.getPhenotypeAssociationSetId()
+    #         request.page_token = response.next_page_token
+    #         request.page_size = 1
+    #         request.reference_name = "KIT *wild"
+    #         response = self.sendSearchRequest(
+    #             postUrl,
+    #             request,
+    #             protocol.SearchGenotypesResponse)
+    #         self.assertEqual(1, len(response.genotypes))
+    #         self.assertNotEqual(previous_id, response.genotypes[0].id)
+    #         pageCount += 1
+    #     self.assertEqual(3, pageCount)
