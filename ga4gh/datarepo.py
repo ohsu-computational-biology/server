@@ -17,7 +17,10 @@ import ga4gh.datamodel.references as references
 import ga4gh.datamodel.variants as variants
 import ga4gh.datamodel.sequenceAnnotations as sequenceAnnotations
 import ga4gh.datamodel.bio_metadata as biodata
+import ga4gh.datamodel.genotype_phenotype as g2p
+import ga4gh.datamodel.genotype_phenotype_featureset as g2pFeatureset
 import ga4gh.exceptions as exceptions
+
 from ga4gh import protocol
 
 MODE_READ = 'r'
@@ -233,6 +236,14 @@ class AbstractDataRepository(object):
                     featureSet.getOntology().getName(),
                     featureSet.getId(),
                     sep="\t")
+            print("\tPhenotypeAssociationSets:")
+            for phenotypeAssociationSet in \
+                    dataset.getPhenotypeAssociationSets():
+                print(
+                    "\t", phenotypeAssociationSet.getLocalId(),
+                    phenotypeAssociationSet.getParentContainer().getId(),
+                    sep="\t")
+                # TODO - gabrielle please improve this listing
 
 
 class EmptyDataRepository(AbstractDataRepository):
@@ -447,6 +458,15 @@ class SqlDataRepository(AbstractDataRepository):
                     print(
                         "\t\t\tRead", i, "annotations from reference",
                         referenceName)
+            for phenotypeAssociationSet \
+                    in dataset.getPhenotypeAssociationSets():
+                print("\t\tVerifying PhenotypeAssociationSet")
+                print(
+                    "\t\t\t", phenotypeAssociationSet.getLocalId(),
+                    phenotypeAssociationSet.getParentContainer().getId(),
+                    sep="\t")
+                # TODO - gabrielle please improve this verification,
+                #        print out number of tuples in graph
 
     def _safeConnect(self):
         try:
@@ -1059,8 +1079,16 @@ class SqlDataRepository(AbstractDataRepository):
         cursor.execute("SELECT * FROM FeatureSet;")
         for row in cursor:
             dataset = self.getDataset(row[b'datasetId'])
-            featureSet = sequenceAnnotations.Gff3DbFeatureSet(
-                dataset, row[b'name'])
+            # START Load feature set from g2p
+            # TODO perhaps extend the database record to include class_name
+            if row[b'name'] == 'cgd':
+                featureSet = \
+                    g2pFeatureset \
+                    .PhenotypeAssociationFeatureSet(dataset, row[b'name'])
+            else:
+                featureSet = sequenceAnnotations.Gff3DbFeatureSet(
+                    dataset, row[b'name'])
+            # END
             featureSet.setReferenceSet(
                 self.getReferenceSet(row[b'referenceSetId']))
             featureSet.setOntology(self.getOntology(row[b'ontologyId']))
@@ -1173,6 +1201,44 @@ class SqlDataRepository(AbstractDataRepository):
             assert individual.getId() == row[b'id']
             dataset.addIndividual(individual)
 
+    def _createPhenotypeAssociationSetTable(self, cursor):
+        sql = """
+            CREATE TABLE PhenotypeAssociationSet (
+                id TEXT NOT NULL PRIMARY KEY,
+                name TEXT,
+                datasetId TEXT NOT NULL,
+                dataUrl TEXT NOT NULL,
+                UNIQUE (datasetId, name),
+                FOREIGN KEY(datasetId) REFERENCES Dataset(id)
+                    ON DELETE CASCADE
+            );
+        """
+        cursor.execute(sql)
+
+    def insertPhenotypeAssociationSet(self, phenotypeAssociationSet):
+        # TODO add support for info and sourceUri fields.
+        sql = """
+            INSERT INTO PhenotypeAssociationSet (
+                id, name, datasetId,dataUrl )
+            VALUES (?, ?, ?, ?)
+        """
+        cursor = self._dbConnection.cursor()
+        cursor.execute(sql, (
+            phenotypeAssociationSet.getId(),
+            phenotypeAssociationSet.getLocalId(),
+            phenotypeAssociationSet.getParentContainer().getId(),
+            phenotypeAssociationSet._dataUrl
+            ))
+
+    def _readPhenotypeAssociationSetTable(self, cursor):
+        cursor.row_factory = sqlite3.Row
+        cursor.execute("SELECT * FROM PhenotypeAssociationSet;")
+        for row in cursor:
+            dataset = self.getDataset(row[b'datasetId'])
+            phenotypeAssociationSet = g2p.PhenotypeAssociationSet(
+                dataset, row[b'name'], row[b'dataUrl'])
+            dataset.addPhenotypeAssociationSet(phenotypeAssociationSet)
+
     def initialise(self):
         """
         Initialise this data repostitory, creating any necessary directories
@@ -1193,6 +1259,7 @@ class SqlDataRepository(AbstractDataRepository):
         self._createFeatureSetTable(cursor)
         self._createBioSampleTable(cursor)
         self._createIndividualTable(cursor)
+        self._createPhenotypeAssociationSetTable(cursor)
 
     def exists(self):
         """
@@ -1237,3 +1304,4 @@ class SqlDataRepository(AbstractDataRepository):
             self._readFeatureSetTable(cursor)
             self._readBioSampleTable(cursor)
             self._readIndividualTable(cursor)
+            self._readPhenotypeAssociationSetTable(cursor)
