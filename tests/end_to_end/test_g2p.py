@@ -395,7 +395,13 @@ class TestG2P(unittest.TestCase):
         request = protocol.SearchGenotypePhenotypeRequest()
         request.phenotype_association_set_id = \
             self.getPhenotypeAssociationSetId()
-        request.genotype_ids.extend(["http://ohsu.edu/cgd/27d2169c"])
+        (datasetName, featureSet) = self.getCGDDataSetFeatureSet()
+        featureId = \
+            "http://ohsu.edu/cgd/27d2169c"
+        obfuscated = self.getObfuscatedFeatureCompoundId(datasetName,
+                                                         featureSet.name,
+                                                         featureId)
+        request.feature_ids.extend([obfuscated])
         response = self.sendSearchRequest(
             '/genotypephenotypes/search',
             request,
@@ -436,7 +442,7 @@ class TestG2P(unittest.TestCase):
         request = protocol.SearchGenotypePhenotypeRequest()
         request.phenotype_association_set_id = \
             self.getPhenotypeAssociationSetId()
-        request.genotype_ids.extend(["FOOBAR"])
+        request.feature_ids.extend(["FOOBAR"])
         response = self.sendSearchRequest(
             '/genotypephenotypes/search',
             request,
@@ -450,7 +456,15 @@ class TestG2P(unittest.TestCase):
         request = protocol.SearchGenotypePhenotypeRequest()
         request.phenotype_association_set_id = \
             self.getPhenotypeAssociationSetId()
-        request.genotype_ids.extend(["http://ohsu.edu/cgd/27d2169c"])
+        request.phenotype_association_set_id = \
+            self.getPhenotypeAssociationSetId()
+        (datasetName, featureSet) = self.getCGDDataSetFeatureSet()
+        featureId = \
+            "http://ohsu.edu/cgd/27d2169c"
+        obfuscated = self.getObfuscatedFeatureCompoundId(datasetName,
+                                                         featureSet.name,
+                                                         featureId)
+        request.feature_ids.extend([obfuscated])
         response = self.sendSearchRequest(
             '/genotypephenotypes/search',
             request,
@@ -463,7 +477,13 @@ class TestG2P(unittest.TestCase):
         request = protocol.SearchGenotypePhenotypeRequest()
         request.phenotype_association_set_id = \
             self.getPhenotypeAssociationSetId()
-        request.genotype_ids.extend(["http://ohsu.edu/cgd/27d2169c"])
+        (datasetName, featureSet) = self.getCGDDataSetFeatureSet()
+        featureId = \
+            "http://ohsu.edu/cgd/27d2169c"
+        obfuscated = self.getObfuscatedFeatureCompoundId(datasetName,
+                                                         featureSet.name,
+                                                         featureId)
+        request.feature_ids.extend([obfuscated])
         eq = protocol.EvidenceQuery()
         eq.description = "imatinib"
         request.evidence.extend([eq])
