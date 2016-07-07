@@ -33,8 +33,8 @@ from ga4gh.sequence_annotations_pb2 import *  # noqa
 from ga4gh.sequence_annotation_service_pb2 import *  # noqa
 from ga4gh.bio_metadata_pb2 import *  # noqa
 from ga4gh.bio_metadata_service_pb2 import *  # noqa
-from ga4gh.genotype_phenotype_pb2 import * # noqa
-from ga4gh.genotype_phenotype_service_pb2 import * # noqa
+from ga4gh.genotype_phenotype_pb2 import *  # noqa
+from ga4gh.genotype_phenotype_service_pb2 import *  # noqa
 
 # A map of response objects to the name of the attribute used to
 # store the values returned.
@@ -53,10 +53,10 @@ _valueListNameMap = {
     SearchFeaturesResponse: "features",  # noqa
     SearchBioSamplesResponse: "biosamples",  # noqa
     SearchIndividualsResponse: "individuals",  # noqa
-    SearchPhenotypeAssociationSetsResponse: "phenotype_association_sets" ,  # noqa
-    SearchPhenotypesResponse: "phenotypes", # noqa
-    SearchGenotypesResponse: "genotypes", #noqa
-    SearchGenotypePhenotypeResponse: "associations", #noqa
+    SearchPhenotypeAssociationSetsResponse: "phenotype_association_sets",  # noqa
+    SearchPhenotypesResponse: "phenotypes",  # noqa
+    SearchGenotypesResponse: "genotypes",  # noqa
+    SearchGenotypePhenotypeResponse: "associations"  # noqa
 }
 
 
