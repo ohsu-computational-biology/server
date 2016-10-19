@@ -444,6 +444,13 @@ class G2PUtility(object):
 
         phenotypeInstance.description = phenotype[LABEL]
         phenotypeInstance.id = phenotype['id']
+        if HAS_QUALITY in phenotype:
+            qualifier = phenotype[HAS_QUALITY]
+            qualifierTerm = protocol.OntologyTerm()
+            qualifierTerm.term = qualifier.split('/')[-1]
+            qualifierTerm.id = qualifier
+            phenotypeInstance.qualifier.extend([qualifierTerm])
+
         fpa.phenotype.MergeFrom(phenotypeInstance)
         fpa.phenotype_association_set_id = self.getId()
         return fpa
